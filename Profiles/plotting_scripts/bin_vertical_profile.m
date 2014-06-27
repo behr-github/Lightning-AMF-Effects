@@ -44,6 +44,7 @@ end
 
 % Calculate the midpoints
 bin_midpoints = bin_edges(1:end-1) + diff(bin_edges);
+bin_midpoints = bin_midpoints;
 
 % Do the binning. Points whose altitude falls exactly on a bin edge are
 % assigned to the upper bin.
@@ -68,6 +69,6 @@ end
 % Remove any NaNs in the average
 xx = find(isnan(bin_values));
 bin_values(xx) = []; bin_midpoints(xx) = []; bin_error(xx,:) = [];
-
+if size(bin_error,1)>size(bin_error,2); bin_error = bin_error'; end % Make bin_error into a row rather than column matrix
 end
 

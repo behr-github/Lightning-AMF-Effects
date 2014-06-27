@@ -1,4 +1,4 @@
-function [ bin_values, bin_midpoints, bin_error ] = bin_rolling_vertical_profile( altitude, data_values, binwidth, binspacing, varargin )
+function [ bin_values, bin_midpoints, bin_error, bin_weights ] = bin_rolling_vertical_profile( altitude, data_values, binwidth, binspacing, varargin )
 %bin_rolling_vertical_profile(altitude, data, binwidth, binspacing, [options]) Bin vertical profile data with rolling median or mean
 %   This function groups data into altitude bins of width "binwidth" (in
 %   km) and with centers "binspacing" km apart, essentially a rolling
@@ -38,7 +38,8 @@ xx = bin_tops <= (top_alt + binwidth); %...then restrict then to those that are 
 bins = [bin_tops(xx) - binwidth; bin_tops(xx) - 0.5*binwidth; bin_tops(xx)]'; % Create a matrix where the columns are [bin_bottom, bin_center, bin_top]
 
 % Do the binning. 
-bin_values = zeros(size(bins,1),1);
+bin_values = zeros(size(bins,1),1)'; % output as row
+bin_weights = zeros(size(bins,1),1)';
 if strcmpi(binmode,'mean')
     bin_error = zeros(size(bins,1),1);
 else
@@ -47,6 +48,7 @@ end
 
 for a=1:numel(bin_values)
     bin_data_vals = data_vals(altitude > bins(a,1) & altitude <= bins(a,3));
+    bin_weights(a) = numel(bin_data_vals);
     if strcmpi(binmode,'mean')
         bin_values(a) = nanmean(bin_data_vals(:));
         bin_error(a) = nanstd(bin_data_vals(:)) / sqrt(numel(bin_data_vals));
@@ -56,7 +58,9 @@ for a=1:numel(bin_values)
     end
 end
 
-bin_midpoints = bins(:,2);
+% output as row
+bin_midpoints = bins(:,2)';
+bin_error = bin_error';
 
 end
 
