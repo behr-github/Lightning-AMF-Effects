@@ -15,10 +15,6 @@ llod = Merge.metadata.lower_lod_flag;
 
 fills = data == fill_val | data == ulod | data == llod;
 data(fills) = NaN;
-utc(fills) = NaN;
-lat(fills) = NaN;
-lon(fills) = NaN;
-alt(fills) = NaN;
 
 end
 
