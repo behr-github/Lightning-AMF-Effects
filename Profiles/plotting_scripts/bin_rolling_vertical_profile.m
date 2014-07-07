@@ -12,6 +12,19 @@ function [ bin_values, bin_midpoints, bin_error, bin_weights ] = bin_rolling_ver
 %   bin; and bin_error, a 2 x n matrix of quartiles if running in median
 %   mode, or a 1 x n row vector of std. dev. in mean mode.
 %
+%   The parameter 'binstart' takes one of four strings: 'zero', 'center',
+%   'bottom', or 'defined'. The default is 'zero'; these determine how the
+%   bottom bin is positioned.
+%       -- 'zero' places the bottom of the first bin at altitude = 0.
+%       -- 'center' places the center of the first bin at the lowest
+%       altitude that has data (data_values is not a NaN).
+%       -- 'bottom' places the bottom of the first bin at the lowest
+%       altitude that has data
+%       -- 'defined' takes a list of bin centers (with the parameter
+%       'bincenters') and will create the bins of binwidth around them.
+%       Useful if you need to bin one dataset with 'center' or 'bottom',
+%       then replicate those bins for other datasets
+%
 %   Josh Laughner <joshlaugh5@gmail.com> 24 June 2014
 
 p = inputParser;
@@ -20,6 +33,8 @@ p.addRequired('data_values',@isnumeric);
 p.addRequired('binwidth',@isscalar);
 p.addRequired('binspacing',@isscalar);
 p.addOptional('binmode','median',@(x) any(strcmpi(x,{'median','mean'})));
+p.addParamValue('binstart','zero', @(x) any(strcmpi(x,{'zero','center','bottom','defined'})));
+p.addParamValue('bincenters',[],@ismatrix)
 
 p.parse(altitude, data_values, binwidth, binspacing, varargin{:});
 pout = p.Results;
@@ -28,13 +43,33 @@ data_vals = pout.data_values;
 binwidth = pout.binwidth;
 binspacing = pout.binspacing;
 binmode = pout.binmode;
+binstart = pout.binstart;
+bincenters = pout.bincenters;
+
+if strcmp(binstart,'defined') && isempty(bincenters)
+    error('bin_profile:input_centers','The parameter ''binstart'' was set to ''centers'' but no centers were passed');
+end
 
 % Define the edges and centers of the bins.  The first bin center will be
 % 1/2 binwidth above 0.
 
 top_alt = max(altitude(:));
-bin_tops = binwidth:binspacing:100; % Generate more bins than we could possibly need...
-xx = bin_tops <= (top_alt + binwidth); %...then restrict then to those that are needed to hold our data
+% Generate more bins than we could possibly need...
+if strcmp(binstart,'defined')
+    bin_tops = 0.5 .* binwidth + bincenters;
+    xx = true(size(bin_tops));
+else
+    if strcmp(binstart,'zero')
+        bin_tops = binwidth:binspacing:100;
+    elseif strcmp(binstart, 'center')
+        lowest_alt = min(altitude(~isnan(data_vals)));
+        bin_tops = (0.5*binwidth + lowest_alt):binspacing:100;
+    elseif strcmp(binstart, 'bottom')
+        lowest_alt = min(altitude(~isnan(data_vals)));
+        bin_tops = (binwidth + lowest_alt):binspacing:100;
+    end
+    xx = bin_tops <= (top_alt + binwidth); %...then restrict then to those that are needed to hold our data
+end
 bins = [bin_tops(xx) - binwidth; bin_tops(xx) - 0.5*binwidth; bin_tops(xx)]'; % Create a matrix where the columns are [bin_bottom, bin_center, bin_top]
 
 % Do the binning. 
