@@ -3,15 +3,46 @@ function [ varargout ] = state_outlines( varargin )
 %   Plots outlines of states using MATLAB shape files, which makes them
 %   easier to plot more stuff on top of than using m_map. Pass specific
 %   state abbreviations, or 'all' (or no arguments) to draw to full US
+%
+%   Pass a figure number as the first argument to draw the outlines on the
+%   specified figure.  gcf returns a number, and so works just fine as this
+%   argument.
+%
+%   Most color specifications can be passed as the second argument (or the
+%   first if not also passing a figure number).  This will recolor the
+%   state outlines from their default black.  Note that only 1 x 3 vectors
+%   or 1 character strings will work.
+%
+%   Josh Laughner <joshlaugh5@gmail.com> Jul 2014
+
+argin = varargin;
+
+if isnumeric(argin{1}) && numel(argin{1}) == 1;
+    fignum = argin{1};
+    argin(1) = [];
+else 
+    fignum = 0;
+end
+
+if ischar(argin{1}) && length(argin{1}) == 1;
+    colspec = argin{1}; 
+    argin(1) = [];
+elseif isnumeric(argin{1}) && length(argin(1))==3;
+    colspec = argin{1};
+    argin(1) = [];
+else
+    colspec = 'k';
+end
+    
 
 not_states = false;
-if nargin == 0;
+if nargin == 0 || isempty(argin);
     states = 'all';
-elseif strcmpi(varargin{1},'not')
-    states = varargin(2:end);
+elseif strcmpi(argin{1},'not')
+    states = argin(2:end);
     not_states = true;
 else
-    states = varargin;
+    states = argin;
 end
 
 state_abbrev = {'al','ak','az','ar','ca','co','ct','de','fl','ga','hi','id','il','in','ia','ks','ky','la','me','md','ma','mi','mn','ms','mo','mt','ne','nv','nh','nj','nm','ny','nc','nd','oh','ok','or','pa','ri','sc','sd','tn','tx','ut','vt','va','wa','wv','wi','wy'};
@@ -24,11 +55,15 @@ state_names = {'alabama','alaska','arizona','arkansas','california','colorado','
 
 % Read the states shapefile and plot
 usa = shaperead('usastatehi.shp');
-fnum = figure;
+
+if fignum < 1; fnum = figure;
+else figure(fignum); fnum = fignum;
+end
+
 if nargout > 0; varargout{1} = fnum; end
 if strcmpi(states,'all');
     for a=1:numel(usa)
-        plot(usa(a).X, usa(a).Y,'color','k');
+        line(usa(a).X, usa(a).Y,'color',colspec);
         hold on
     end
 elseif not_states
@@ -45,7 +80,7 @@ elseif not_states
         if any(strcmpi(usa(b).Name,states_not_to_draw))
             continue
         else
-            plot(usa(b).X, usa(b).Y, 'color','k')
+            line(usa(b).X, usa(b).Y, 'color',colspec)
             hold on
         end
     end
@@ -57,7 +92,7 @@ else
         else
             xx = find(strcmpi(states{b},state_names));
         end
-        plot(usa(xx).X, usa(xx).Y,'color','k');
+        line(usa(xx).X, usa(xx).Y,'color',colspec);
         hold on
     end
 end
