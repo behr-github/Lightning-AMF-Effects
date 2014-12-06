@@ -23,8 +23,8 @@ altfield = pout.alt;
 lonfield = pout.lon;
 latfield = pout.lat;
 
-data = eval(sprintf('Merge.Data.%s.Values',field));
-fill_val = eval(sprintf('Merge.Data.%s.Fill',field));
+data = Merge.Data.(field).Values;
+fill_val = Merge.Data.(field).Fill;
 ulod = Merge.metadata.upper_lod_flag;
 llod = Merge.metadata.lower_lod_flag;
 

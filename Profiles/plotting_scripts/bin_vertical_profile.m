@@ -66,9 +66,6 @@ for a=1:numel(bin_values)
     end
 end
 
-% Remove any NaNs in the average
-xx = find(isnan(bin_values));
-bin_values(xx) = []; bin_midpoints(xx) = []; bin_error(xx,:) = [];
 if size(bin_error,1)>size(bin_error,2); bin_error = bin_error'; end % Make bin_error into a row rather than column matrix
 end
 
