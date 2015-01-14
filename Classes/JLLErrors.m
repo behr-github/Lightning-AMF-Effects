@@ -34,6 +34,8 @@ classdef JLLErrors<handle
         invalidinput_msg = 'An input to this function is not valid; see documentation';
         invalidvar_tag = 'invalid_var';
         invalidvar_msg = 'The variable ''%s'' is not valid, see documentation';
+        invalidvartype_tag = 'bad_var_type';
+        invalidvartype_msg = 'The variable ''%s'' is a %s and must be an %s';
         numArgs_tag = 'wrong_number_arguments';
         numArgs_msg = 'The number of arguments must be between %d and %d.';
         numelMismatch_tag = 'numel_mismatch';
@@ -85,6 +87,14 @@ classdef JLLErrors<handle
             msg = sprintf(obj.invalidvar_msg,varname);
             
             errstruct = obj.makeErrStruct(obj.invalidvar_tag,msg);
+        end
+        
+        function errstruct = badvartype(obj, var, rightclass)
+            % Takes a variable of any type and a string with the correct class that that variable should be.  Will output a message indicating that the variable var is of type class(var) and should be of type rightclass.
+            varname = inputname(2);
+            wrongclass = class(var);
+            msg = sprintf(obj.invalidvartype_msg, varname, wrongclass, rightclass);
+            errstruct = obj.makeErrStruct(obj.invalidvartype_tag, msg);
         end
         
         function errstruct = badgeo(obj)
