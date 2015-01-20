@@ -67,6 +67,7 @@ classdef JLLErrors<handle
         
         function errstruct = notScalar(obj, varname)
             % Takes a single variable name.  Returns an error message that said variable must be a scalar.
+            warning('JLLErrors.notScalar is deprecated - use "badvartype" instead');
             msg = sprintf(obj.scalar_msg,varname);
             errstruct = obj.makeErrStruct(obj.scalar_tag,msg);
         end
