@@ -34,8 +34,8 @@ if nargout > 5; varargout{5} = fills; end
 
 if nargout > 1; 
     utc = eval(sprintf('Merge.Data.%s.Values',utcfield)); 
-    utcfills = eval(sprintf('Merge.Data.%s.Fill',utcfield));
-    utc(utc==utcfills) = NaN;
+    %utcfills = eval(sprintf('Merge.Data.%s.Fill',utcfield));
+    %utc(utc==utcfills) = NaN; % There shouldn't ever be fill values in the UTC field
     varargout{1} = utc;
 end
 if nargout > 2; 
