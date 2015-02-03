@@ -30,6 +30,8 @@ classdef JLLErrors<handle
         % types
         scalar_tag = 'not_scalar';
         scalar_msg = 'The variable ''%s'' must be a scalar value';
+        fnf_tag = 'file_not_found';
+        fnf_msg = 'Could not load the file: %s';
         invalidinput_tag = 'invalid_input';
         invalidinput_msg = 'An input to this function is not valid; see documentation';
         invalidvar_tag = 'invalid_var';
@@ -46,6 +48,8 @@ classdef JLLErrors<handle
         badgeo_msg = 'The data matrix input is not consistent with the size of the lat/lon inputs';
         tmf_tag = 'non_unique_file';
         tmf_msg = 'More than one %s file found meeting given criteria - try a more specific file prefix, if applicable';
+        usercancel_tag = 'user_cancel';
+        usercancel_msg = 'User cancelled run.';
         
         % A list of custom identifiers and messages and reference to those
         % entries
@@ -102,6 +106,12 @@ classdef JLLErrors<handle
             errstruct = obj.makeErrStruct(obj.badgeo_tag, obj.badgeo_msg);
         end
         
+        function errstruct = filenotfound(obj, filename)
+            % Error when a file could not be found to be loaded. Takes one argument which describes the file that couldn't be loaded.
+            msg = sprintf(obj.fnf_msg,filename);
+            errstruct = obj.makeErrStruct(obj.fnf_tag, msg);
+        end
+        
         function errstruct = toomanyfiles(obj, varargin)
             % Error for use when finding file names to load using wildcard characters.  Takes one or no arguments, if one is given, it will describe what kind of file is trying to be loaded.
             if numel(varargin)>0
@@ -129,6 +139,11 @@ classdef JLLErrors<handle
             msgspec = sprintf(obj.dimMismatch_msg, varnamespec);
             msg = sprintf(msgspec, varargin{:});
             errstruct = obj.makeErrStruct(obj.dimMismatch_tag, msg);
+        end
+        
+        function errstruct = userCancel(obj)
+            % Error for when the user cancels out of a dialogue box. Takes no arguments.
+            errstruct = obj.makeErrStruct(obj.usercancel_tag,obj.usercancel_msg);
         end
         
         function errstruct = numberArguments(obj,nmin,nmax)
