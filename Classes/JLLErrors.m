@@ -77,11 +77,13 @@ classdef JLLErrors<handle
         end
         
         function errstruct = badinput(obj,varargin)
-            %Returns an error structure for a bad input.  With no arguments, the default message will be displayed; if one argument is passed, that specifies the message.
+            %Returns an error structure for a bad input.  With no arguments, the default message will be displayed; if one argument is passed, that specifies the message. If multiple arguments are passed, it inserts them into the message using sprintf.
             if numel(varargin) == 0
                 msg = obj.invalidinput_msg;
             elseif numel(varargin)==1
                 msg = varargin{1};
+            else
+                msg = sprintf(varargin{1},varargin{2:end});
             end
             
             errstruct = obj.makeErrStruct(obj.invalidinput_tag, msg);
