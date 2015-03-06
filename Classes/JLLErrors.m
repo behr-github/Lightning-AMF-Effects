@@ -48,6 +48,8 @@ classdef JLLErrors<handle
         badgeo_msg = 'The data matrix input is not consistent with the size of the lat/lon inputs';
         tmf_tag = 'non_unique_file';
         tmf_msg = 'More than one %s file found meeting given criteria - try a more specific file prefix, if applicable';
+        unexpected_problem_tag = 'unknown_runtime_error';
+        unexpected_problem_msg = 'Something went wrong and a clause that should not normally be reached has been. Possibly a variable is of an unexpected type or state.';
         usercancel_tag = 'user_cancel';
         usercancel_msg = 'User cancelled run.';
         
@@ -153,6 +155,14 @@ classdef JLLErrors<handle
             narginchk(3,3);
             msg = sprintf(obj.numArgs_msg,nmin,nmax);
             errstruct = obj.makeErrStruct(obj.numArgs_tag, msg);
+        end
+        
+        function errstruct = unknownError(obj)
+            % Error for cases where you know something when wrong, but
+            % don't know what.  An example would be if all possible cases
+            % are covered in if-elseif clauses, and the else clause is
+            % reached.
+            errstruct = obj.makeErrStruct(obj.unexpected_problem_tag, obj.unexpected_problem_msg);
         end
         
         function errstruct = callError(obj, tag, msg)
