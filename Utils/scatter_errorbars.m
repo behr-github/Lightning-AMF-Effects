@@ -29,10 +29,10 @@ p.addRequired('x',@ismatrix);
 p.addRequired('y',@ismatrix);
 p.addRequired('l',@ismatrix);
 p.addOptional('u',[],@isnumeric);
-p.addParamValue('direction','y',@(x) any(strcmpi(x,{'x','y'})));
-p.addParamValue('color','b');
-p.addParamValue('linewidth',0.5);
-p.addParamValue('tipscale',1,@isscalar);
+p.addParameter('direction','y',@(x) any(strcmpi(x,{'x','y'})));
+p.addParameter('color','b');
+p.addParameter('linewidth',0.5);
+p.addParameter('tipscale',1,@isscalar);
 
 p.parse(x,y,l,varargin{:});
 pout = p.Results;
