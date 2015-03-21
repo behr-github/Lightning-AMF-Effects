@@ -37,7 +37,7 @@ classdef JLLErrors<handle
         invalidvar_tag = 'invalid_var';
         invalidvar_msg = 'The variable ''%s'' is not valid, see documentation';
         invalidvartype_tag = 'bad_var_type';
-        invalidvartype_msg = 'The variable ''%s'' is a %s and must be an %s';
+        invalidvartype_msg = 'The variable ''%s'' is a %s (size %s) and must be a %s';
         numArgs_tag = 'wrong_number_arguments';
         numArgs_msg = 'The number of arguments must be between %d and %d.';
         numelMismatch_tag = 'numel_mismatch';
@@ -102,7 +102,8 @@ classdef JLLErrors<handle
             % Takes a variable of any type and a string with the correct class that that variable should be.  Will output a message indicating that the variable var is of type class(var) and should be of type rightclass.
             varname = inputname(2);
             wrongclass = class(var);
-            msg = sprintf(obj.invalidvartype_msg, varname, wrongclass, rightclass);
+            varsize = mat2str(size(var));
+            msg = sprintf(obj.invalidvartype_msg, varname, wrongclass, varsize, rightclass);
             errstruct = obj.makeErrStruct(obj.invalidvartype_tag, msg);
         end
         
