@@ -9,10 +9,10 @@ function [ data, varargout ] = remove_merge_fills( Merge, field, varargin )
 p = inputParser;
 p.addRequired('Merge',@isstruct);
 p.addRequired('field',@isstr);
-p.addParamValue('time','UTC',@isstr);
-p.addParamValue('alt','ALTP',@isstr);
-p.addParamValue('lat','LATITUDE',@isstr);
-p.addParamValue('lon','LONGITUDE',@isstr);
+p.addParameter('time','UTC',@isstr);
+p.addParameter('alt','ALTP',@isstr);
+p.addParameter('lat','LATITUDE',@isstr);
+p.addParameter('lon','LONGITUDE',@isstr);
 
 p.parse(Merge,field,varargin{:});
 pout = p.Results;
