@@ -13,6 +13,7 @@ p.addParameter('time','UTC',@isstr);
 p.addParameter('alt','ALTP',@isstr);
 p.addParameter('lat','LATITUDE',@isstr);
 p.addParameter('lon','LONGITUDE',@isstr);
+p.addParameter('DEBUG_LEVEL',1,@(x) (isscalar(x) && isnumeric(x)));
 
 p.parse(Merge,field,varargin{:});
 pout = p.Results;
@@ -23,10 +24,27 @@ altfield = pout.alt;
 lonfield = pout.lon;
 latfield = pout.lat;
 
+DEBUG_LEVEL = pout.DEBUG_LEVEL;
+
 data = Merge.Data.(field).Values;
 fill_val = Merge.Data.(field).Fill;
-ulod = Merge.metadata.upper_lod_flag;
-llod = Merge.metadata.lower_lod_flag;
+try
+    ulod = Merge.metadata.upper_lod_flag;
+catch err
+    if strcmp(err.identifier,'MATLAB:nonExistentField')
+        ulod = fill_val;
+        if DEBUG_LEVEL > 0; fprintf('remove_merge_fills: ulod field does not exist\n'); end
+    end
+end
+
+try
+    llod = Merge.metadata.lower_lod_flag;
+catch err
+    if strcmp(err.identifier,'MATLAB:nonExistentField')
+        llod = fill_val;
+        if DEBUG_LEVEL > 0; fprintf('remove_merge_fills: llod field does not exist\n'); end
+    end
+end
 
 fills = data == fill_val | data == ulod | data == llod;
 data(fills) = NaN;
