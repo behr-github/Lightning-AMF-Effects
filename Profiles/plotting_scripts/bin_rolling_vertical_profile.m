@@ -33,8 +33,8 @@ p.addRequired('data_values',@isnumeric);
 p.addRequired('binwidth',@isscalar);
 p.addRequired('binspacing',@isscalar);
 p.addOptional('binmode','median',@(x) any(strcmpi(x,{'median','mean'})));
-p.addParamValue('binstart','zero', @(x) any(strcmpi(x,{'zero','center','bottom','defined'})));
-p.addParamValue('bincenters',[],@ismatrix)
+p.addParameter('binstart','zero', @(x) any(strcmpi(x,{'zero','center','bottom','defined'})));
+p.addParameter('bincenters',[],@ismatrix)
 
 p.parse(altitude, data_values, binwidth, binspacing, varargin{:});
 pout = p.Results;
