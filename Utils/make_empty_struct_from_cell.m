@@ -38,7 +38,7 @@ for a=1:numel(safe_names)
         safe_names{a} = strcat('FN',safe_names{a});
     end
 end
-if any(~containedin(safe_names,names))
+if any(~ismember(safe_names,names))
     warning('Some field names were made safe for field names and will not match the original name');
 end
 
@@ -47,7 +47,8 @@ for a=1:2*numel(names)
     % Make the odd entries the field names and the even entries empty
     % matrices - this way tmp_cell{:} will generate the proper inputs to
     % the "struct" function (note that cell(m,n) produces a cell array with
-    % empty matrices by default, so we only need to set the odd entries).
+    % empty matrices by default, so we only need to set the odd entries,
+    % unless the user overrides the default value of the fields).
     if mod(a,2)==1
         ind = (a+1)/2;
         tmp_cell{a} = safe_names{ind};
