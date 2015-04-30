@@ -76,6 +76,7 @@ classdef JLLErrors<handle
             warning('JLLErrors.notScalar is deprecated - use "badvartype" instead');
             msg = sprintf(obj.scalar_msg,varname);
             errstruct = obj.makeErrStruct(obj.scalar_tag,msg);
+            error(errstruct);
         end
         
         function errstruct = badinput(obj,varargin)
@@ -89,6 +90,7 @@ classdef JLLErrors<handle
             end
             
             errstruct = obj.makeErrStruct(obj.invalidinput_tag, msg);
+            error(errstruct);
         end
         
         function errstruct = badvar(obj, varname)
@@ -96,6 +98,7 @@ classdef JLLErrors<handle
             msg = sprintf(obj.invalidvar_msg,varname);
             
             errstruct = obj.makeErrStruct(obj.invalidvar_tag,msg);
+            error(errstruct);
         end
         
         function errstruct = badvartype(obj, var, rightclass)
@@ -105,16 +108,19 @@ classdef JLLErrors<handle
             varsize = mat2str(size(var));
             msg = sprintf(obj.invalidvartype_msg, varname, wrongclass, varsize, rightclass);
             errstruct = obj.makeErrStruct(obj.invalidvartype_tag, msg);
+            error(errstruct);
         end
         
         function errstruct = badgeo(obj)
             errstruct = obj.makeErrStruct(obj.badgeo_tag, obj.badgeo_msg);
+            error(errstruct);
         end
         
         function errstruct = filenotfound(obj, filename)
             % Error when a file could not be found to be loaded. Takes one argument which describes the file that couldn't be loaded.
             msg = sprintf(obj.fnf_msg,filename);
             errstruct = obj.makeErrStruct(obj.fnf_tag, msg);
+            error(errstruct);
         end
         
         function errstruct = toomanyfiles(obj, varargin)
@@ -126,6 +132,7 @@ classdef JLLErrors<handle
             end
             
             errstruct = obj.makeErrStruct(obj.tmf_tag, msg);
+            error(errstruct);
         end
         
         function errstruct = numelMismatch(obj, varargin)
@@ -135,6 +142,7 @@ classdef JLLErrors<handle
             msgspec = sprintf(obj.numelMismatch_msg, varnamespec);
             msg = sprintf(msgspec, varargin{:});
             errstruct = obj.makeErrStruct(obj.numelMismatch_tag, msg);
+            error(errstruct);
         end
         
         function errstruct = dimMismatch(obj, varargin)
@@ -144,11 +152,13 @@ classdef JLLErrors<handle
             msgspec = sprintf(obj.dimMismatch_msg, varnamespec);
             msg = sprintf(msgspec, varargin{:});
             errstruct = obj.makeErrStruct(obj.dimMismatch_tag, msg);
+            error(errstruct);
         end
         
         function errstruct = userCancel(obj)
             % Error for when the user cancels out of a dialogue box. Takes no arguments.
             errstruct = obj.makeErrStruct(obj.usercancel_tag,obj.usercancel_msg);
+            error(errstruct);
         end
         
         function errstruct = numberArguments(obj,nmin,nmax)
@@ -156,6 +166,7 @@ classdef JLLErrors<handle
             narginchk(3,3);
             msg = sprintf(obj.numArgs_msg,nmin,nmax);
             errstruct = obj.makeErrStruct(obj.numArgs_tag, msg);
+            error(errstruct);
         end
         
         function errstruct = unknownError(obj)
@@ -164,11 +175,16 @@ classdef JLLErrors<handle
             % are covered in if-elseif clauses, and the else clause is
             % reached.
             errstruct = obj.makeErrStruct(obj.unexpected_problem_tag, obj.unexpected_problem_msg);
+            error(errstruct);
         end
         
-        function errstruct = callError(obj, tag, msg)
-            % A very simple method that creates an error with a custom message and id tag (second and first arguments respectively). The resulting error will have the identifier 'callingfxn:tag' and the specified message.
+        function errstruct = callError(obj, tag, msg, varargin)
+            % A very simple method that creates an error with a custom message and id tag (second and first arguments respectively). The resulting error will have the identifier 'callingfxn:tag' and the specified message. Additional arguments will be inserted into the msg using sprintf
+            if numel(varargin) > 0
+                msg = sprintf(msg,varargin{:});
+            end
             errstruct = obj.makeErrStruct(tag,msg);
+            error(errstruct);
         end
         
         function obj = addCustomError(obj, varargin)
@@ -206,6 +222,7 @@ classdef JLLErrors<handle
             msg = obj.custom_msgs{xx};
             
             errstruct = obj.makeErrStruct(tag,msg);
+            error(errstruct);
         end
     end
     
