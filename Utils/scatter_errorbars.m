@@ -1,4 +1,4 @@
-function [ ] = scatter_errorbars( x,y,l,varargin )
+function [ varargout ] = scatter_errorbars( x,y,l,varargin )
 %xerrorbars - Plots error bars acceptable for a scatter plot in x or y
 %directions.
 %   Valid inputs are (x,y,l,u) or (x,y,e)   
@@ -93,9 +93,13 @@ indpts(8,:) = tip_r;
 indpts(9,:) = NaN;
 
 if strcmpi(direction,'x');
-    line(errpts,indpts,'color',color,'linewidth',width)
+    l=line(errpts,indpts,'color',color,'linewidth',width);
 elseif strcmpi(direction, 'y');
-    line(indpts,errpts,'color',color,'linewidth',width)
+    l=line(indpts,errpts,'color',color,'linewidth',width);
+end
+
+if nargout > 0
+    varargout{1} = l;
 end
 end
 
