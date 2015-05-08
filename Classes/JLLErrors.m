@@ -35,7 +35,7 @@ classdef JLLErrors<handle
         invalidinput_tag = 'invalid_input';
         invalidinput_msg = 'An input to this function is not valid; see documentation';
         invalidvar_tag = 'invalid_var';
-        invalidvar_msg = 'The variable ''%s'' is not valid, see documentation';
+        invalidvar_msg = 'The variable ''%s'' is not valid, %s';
         invalidvartype_tag = 'bad_var_type';
         invalidvartype_msg = 'The variable ''%s'' is a %s (size %s) and must be a %s';
         numArgs_tag = 'wrong_number_arguments';
@@ -93,9 +93,14 @@ classdef JLLErrors<handle
             error(errstruct);
         end
         
-        function errstruct = badvar(obj, varname)
-            % Takes a variable name as its only argument, will produce an error with a message indicating that that variable is not valid with no additional information.
-            msg = sprintf(obj.invalidvar_msg,varname);
+        function errstruct = badvar(obj, varname, varargin)
+            % Takes at least a variable name (as a string). Can also accept a reason for the problem, otherwise just says "see documentation"
+            if numel(varargin) < 1
+                problem = 'see documentation';
+            else
+                problem = varargin{1};
+            end
+            msg = sprintf(obj.invalidvar_msg,varname,problem);
             
             errstruct = obj.makeErrStruct(obj.invalidvar_tag,msg);
             error(errstruct);
