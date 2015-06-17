@@ -31,7 +31,7 @@ classdef JLLErrors<handle
         scalar_tag = 'not_scalar';
         scalar_msg = 'The variable ''%s'' must be a scalar value';
         fnf_tag = 'file_not_found';
-        fnf_msg = 'Could not load the file: %s';
+        fnf_msg = '%s does not exist';
         invalidinput_tag = 'invalid_input';
         invalidinput_msg = 'An input to this function is not valid; see documentation';
         invalidvar_tag = 'invalid_var';
@@ -52,6 +52,8 @@ classdef JLLErrors<handle
         unexpected_problem_msg = 'Something went wrong and a clause that should not normally be reached has been. Possibly a variable is of an unexpected type or state.';
         usercancel_tag = 'user_cancel';
         usercancel_msg = 'User cancelled run.';
+        notimplemented_tag = 'not_implemented';
+        notimplemented_msg = 'The case "%s" has not been implemented yet';
         
         % A list of custom identifiers and messages and reference to those
         % entries
@@ -183,6 +185,24 @@ classdef JLLErrors<handle
             error(errstruct);
         end
         
+        function errstruct = notimplemented(obj,case_in,varargin)
+            % Error to use when a case is planned but not implemented. Can
+            % be used with 1 argument (the case name as a string), in which
+            % case it just says that the case is not implemented, or >1
+            % argument, in which case the first is a string and the second
+            % are arguments to be inserted into that string following
+            % printf syntax. (If you want a custom message with no
+            % variables put in it, pass '%s' as the first argument and the
+            % message as the second).
+            if numel(varargin) == 0
+                msg = sprintf(obj.notimplemented_msg, case_in);
+            else
+                msg = sprintf(case_in, varargin{:});
+            end
+            errstruct = obj.makeErrStruct(obj.notimplemented_tag, msg);
+            error(errstruct);
+        end
+        
         function errstruct = callError(obj, tag, msg, varargin)
             % A very simple method that creates an error with a custom message and id tag (second and first arguments respectively). The resulting error will have the identifier 'callingfxn:tag' and the specified message. Additional arguments will be inserted into the msg using sprintf
             if numel(varargin) > 0
@@ -204,6 +224,13 @@ classdef JLLErrors<handle
             % use when calling the error using the callError method.  If
             % only two arguments are given, the reference is set by default
             % to be the same as the user defined part of the identifier.
+            %
+            % The message will always be passed through sprintf for
+            % formatting, so you can include formatting strings like %s or
+            % %02.1f and pass the values these should take on to
+            % callCustomError(). This also allows special characters like
+            % \t or \n to be interpreted, but means characters like % or \
+            % need to be escaped.
             if numel(varargin) == 2
                 newid = varargin{1};
                 newref = varargin{1};
@@ -218,13 +245,34 @@ classdef JLLErrors<handle
             obj.custom_refs{end+1} = newref;
         end
         
-        function errstruct = callCustomError(obj,ref)
+        function errstruct = callCustomError(obj,ref,varargin)
             % Call this function with the reference string set using
-            % addCustomError to return a user defined error.
+            % addCustomError to return a user defined error. Additional
+            % arguments are replaced into the message using sprintf; ensure
+            % that your custom message has the right number of % formatting
+            % symbols.
             xx = strcmp(obj.custom_refs,ref);
-            if sum(xx)==0; error('JLLErrors:error_reference','Error reference was invalid or not set'); end
+            if sum(xx)==0; error('JLLErrors:callCustomError:error_reference','Error reference was invalid or not set'); end
+            
             tag = obj.custom_ids{xx};
             msg = obj.custom_msgs{xx};
+            
+            %Check that the right number of formatting strings is present
+            %in the message. Need to handle %% carefully - these should be
+            %ignored because they're not really a formatting string, just
+            %the only way to get a % sign in there.
+            xx = regexp(msg,'%');
+            yy = regexp(msg,'%%');
+            zz = xx ~= yy & xx ~= yy+1;
+            if sum(zz) ~= numel(varargin)
+                error('JLLErrors:callCustomError:msg_format','The number of formatting strings in the message does not match the number of additional values given')
+            end
+            
+            if numel(varargin) > 0
+                msg = sprintf(msg, varargin{:});
+            else
+                msg = sprintf(msg);
+            end
             
             errstruct = obj.makeErrStruct(tag,msg);
             error(errstruct);
@@ -237,6 +285,7 @@ classdef JLLErrors<handle
             stack = dbstack(2,'-completenames');
             errstruct = struct('identifier',errid,'message',msg,'stack',stack);
         end
+        
     end
     
 end
