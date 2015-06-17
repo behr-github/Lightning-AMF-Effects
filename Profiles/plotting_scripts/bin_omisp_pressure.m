@@ -1,4 +1,4 @@
-function [ bin_values, bin_midpoints, bin_errors ] = bin_omisp_pressure( pressure, data_values, varargin )
+function [ bin_values, bin_midpoints, bin_errors, bin_edges ] = bin_omisp_pressure( pressure, data_values, varargin )
 %bin_omisp_pressure(): Returns 'data' binned to bins corresponding to OMI pressure bins.
 %   This function aims to replicate the binning described in Bucsela et.
 %   al. (J. Geophys. Res. 2008, 113, D16S31), which bins data by pressure
@@ -39,7 +39,7 @@ bin_midpoints = [1020, 1010, 1000, 990, 975, 960, 945, 925, 900, 875, 850, 825,.
 
 % Bucsela 2008 states that "bin widths [are] equal to the level spacing;"
 % so I will define bin edges as the center +/- 0.5*D, where D is the larger
-% of the spacings above or belows.
+% of the spacings above or below.
 
 delta = diff(bin_midpoints);
 bins = zeros(numel(bin_midpoints,3));
@@ -77,7 +77,10 @@ for a=1:numel(bin_values)
         bin_values(a) = nanmedian(bin_data_vals(:));
         bin_errors(:,a) = quantile(bin_data_vals(:),[0.25,0.75]);
     end
-end
+end 
+
+% Output the bin edges
+bin_edges = bins(:,[1,3]);
 
 end
 
