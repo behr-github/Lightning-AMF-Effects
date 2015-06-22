@@ -24,6 +24,7 @@ altfield = pout.alt;
 lonfield = pout.lon;
 latfield = pout.lat;
 
+E = JLLErrors;
 DEBUG_LEVEL = pout.DEBUG_LEVEL;
 
 data = Merge.Data.(field).Values;
@@ -46,8 +47,21 @@ catch err
     end
 end
 
-fills = data == fill_val | data == ulod | data == llod;
-data(fills) = NaN;
+if isnumeric(fill_val) && isscalar(fill_val)
+    fills = data == fill_val | data == ulod | data == llod;
+    data(fills) = NaN;
+elseif strcmpi(fill_val,'n/a')
+    % do nothing - this means that there should be absolutely no data
+    % missing because no fill value was assigned in the Merge file. Usually
+    % only happens for UTC.
+else
+    E.badvar('fill_val','Is not a numeric scalar value or "N/A"');
+end
+% Let the user specify longitude as the main input, in which case we need
+% to correct the sign
+if ~isempty(regexpi(field, 'longitude', 'ONCE'))
+    data = lon_fix(data);
+end
 if nargout > 5; varargout{5} = fills; end
 
 if nargout > 1; 
@@ -72,7 +86,7 @@ if nargout > 3;
     lon = eval(sprintf('Merge.Data.%s.Values',lonfield)); 
     lonfills = eval(sprintf('Merge.Data.%s.Fill',lonfield));
     lon(lon==lonfills) = NaN;
-    lon(lon>180) = lon(lon>180) - 360;
+    lon = lon_fix(lon);
     varargout{3} = lon;
 end
 
@@ -80,3 +94,6 @@ end
 
 end
 
+function lon = lon_fix(lon)
+lon(lon>180) = lon(lon>180) - 360;
+end
