@@ -54,6 +54,8 @@ classdef JLLErrors<handle
         usercancel_msg = 'User cancelled run.';
         notimplemented_tag = 'not_implemented';
         notimplemented_msg = 'The case "%s" has not been implemented yet';
+        nodata_tag = 'no_data';
+        nodata_msg = 'The variable(s) %s have no valid data';
         
         % A list of custom identifiers and messages and reference to those
         % entries
@@ -203,6 +205,16 @@ classdef JLLErrors<handle
             error(errstruct);
         end
         
+        function errstruct = nodata(obj, variable_names)
+            % Error to use when a variable or variables has no valid data
+            % (often empty or all NaNs). Takes one argument, the variable
+            % name(s) as a single string.
+            narginchk(2,2)
+            msg = sprintf(obj.nodata_tag, variable_names);
+            errstruct = obj.makeErrStruct(obj.nodata_tag, msg);
+            error(errstruct);
+        end
+        
         function errstruct = callError(obj, tag, msg, varargin)
             % A very simple method that creates an error with a custom message and id tag (second and first arguments respectively). The resulting error will have the identifier 'callingfxn:tag' and the specified message. Additional arguments will be inserted into the msg using sprintf
             if numel(varargin) > 0
@@ -263,7 +275,11 @@ classdef JLLErrors<handle
             %the only way to get a % sign in there.
             xx = regexp(msg,'%');
             yy = regexp(msg,'%%');
-            zz = xx ~= yy & xx ~= yy+1;
+            if isempty(yy)
+                zz = numel(xx);
+            else
+                zz = xx ~= yy & xx ~= yy+1;
+            end
             if sum(zz) ~= numel(varargin)
                 error('JLLErrors:callCustomError:msg_format','The number of formatting strings in the message does not match the number of additional values given')
             end
