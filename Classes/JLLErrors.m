@@ -32,6 +32,8 @@ classdef JLLErrors<handle
         scalar_msg = 'The variable ''%s'' must be a scalar value';
         fnf_tag = 'file_not_found';
         fnf_msg = '%s does not exist';
+        dir_dne_tag = 'dir_does_not_exist';
+        dir_dne_msg = 'The following directory or directories do not exist: %s';
         invalidinput_tag = 'invalid_input';
         invalidinput_msg = 'An input to this function is not valid; see documentation';
         invalidvar_tag = 'invalid_var';
@@ -42,6 +44,8 @@ classdef JLLErrors<handle
         numArgs_msg = 'The number of arguments must be between %d and %d.';
         numelMismatch_tag = 'numel_mismatch';
         numelMismatch_msg = 'The variables %s must have the same number of elements';
+        sizeMismatch_tag = 'size_mismatch';
+        sizeMismatch_msg = 'The variables %s must have the same size';
         dimMismatch_tag = 'dim_mismatch';
         dimMismatch_msg = 'The variables %s must have the same dimensions';
         badgeo_tag = 'latlon_data_mismatch';
@@ -56,6 +60,8 @@ classdef JLLErrors<handle
         notimplemented_msg = 'The case "%s" has not been implemented yet';
         nodata_tag = 'no_data';
         nodata_msg = 'The variable(s) %s have no valid data';
+        runscript_tag = 'runscript_var_unset';
+        runscript_msg = 'The following variables do not appear to be set in the calling runscript: %s';
         
         % A list of custom identifiers and messages and reference to those
         % entries
@@ -132,6 +138,21 @@ classdef JLLErrors<handle
             error(errstruct);
         end
         
+        function errstruct = dir_dne(obj, dirnames)
+            % Error for use when specified directories do not exist. Takes
+            % one or more directory names as a cell; if passing only one
+            % name, it can be a string.
+            narginchk(2,2)
+            if ischar(dirnames)
+                dirnames = {dirnames};
+            elseif ~iscell(dirnames) || any(~iscellcontents(dirnames,'ischar'))
+                error('JLLErrors:dir_dne:bad_input','dirnames should be a string or cell of strings')
+            end
+            vars = strjoin(dirnames, ', ');
+            errstruct = obj.makeErrStruct(obj.dir_dne_tag, sprintf(obj.dir_dne_msg, vars));
+            error(errstruct);
+        end
+        
         function errstruct = toomanyfiles(obj, varargin)
             % Error for use when finding file names to load using wildcard characters.  Takes one or no arguments, if one is given, it will describe what kind of file is trying to be loaded.
             if numel(varargin)>0
@@ -147,10 +168,20 @@ classdef JLLErrors<handle
         function errstruct = numelMismatch(obj, varargin)
             % Error for when an arbitrary number of variables do not have the same number of elements. Takes at least two arguments (variable names as strings) up to an unlimited number of arguments.
             if numel(varargin)<2; error('JLLErrors:numelMismatch:too_few_inputs','JLLErrors.numelMismatch needs at least 2 variable names'); end
-            varnamespec = [repmat('''%s'', ',1,numel(varargin)-1),'''%s'''];
-            msgspec = sprintf(obj.numelMismatch_msg, varnamespec);
-            msg = sprintf(msgspec, varargin{:});
+            varnames = strjoin(varargin{:}, ', ');
+            msg = sprintf(msgspec, varnames);
             errstruct = obj.makeErrStruct(obj.numelMismatch_tag, msg);
+            error(errstruct);
+        end
+        
+        function errstruct = sizeMismatch(obj, varargin)
+            % Error for when an arbitrary number of variables do not have
+            % the same size.  Takes at least two arguments (variable names
+            % as strings) up to any number.
+            if numel(varargin)<2; error('JLLErrors:sizeMismatch:too_few_inputs','JLLErrors.sizeMismatch needs at least 2 variable names'); end
+            varnames = strjoin(varargin{:}, ', ');
+            msg = sprintf(obj.sizeMismatch_msg, varnames);
+            errstruct = obj.makeErrStruct(obj.sizeMismatch_tag, msg);
             error(errstruct);
         end
         
@@ -212,6 +243,21 @@ classdef JLLErrors<handle
             narginchk(2,2)
             msg = sprintf(obj.nodata_tag, variable_names);
             errstruct = obj.makeErrStruct(obj.nodata_tag, msg);
+            error(errstruct);
+        end
+        
+        function errstruct = runscript_error(obj, variable_names)
+            % Error to use when an error is likely due to a missing setting
+            % in a runscript, intended for functions running on a cluster.
+            % Takes one or more variable names to specify as unset.
+            narginchk(2,2)
+            if ischar(variable_names)
+                variable_names = {variable_names};
+            elseif ~iscell(variable_names) || any(~iscellcontents(variable_names,'ischar'))
+                error('JLLErrors:runscript_error:bad_input','variable_names should be a string or cell of strings')
+            end
+            vars = strjoin(variable_names, ', ');
+            errstruct = obj.makeErrStruct(obj.runscript_tag, sprintf(obj.runscript_msg, vars));
             error(errstruct);
         end
         
