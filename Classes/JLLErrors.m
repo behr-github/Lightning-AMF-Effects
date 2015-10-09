@@ -145,7 +145,7 @@ classdef JLLErrors<handle
             narginchk(2,2)
             if ischar(dirnames)
                 dirnames = {dirnames};
-            elseif ~iscell(dirnames) || any(~iscellcontents(dirnames,'ischar'))
+            elseif ~iscellstr(dirnames)
                 error('JLLErrors:dir_dne:bad_input','dirnames should be a string or cell of strings')
             end
             vars = strjoin(dirnames, ', ');
@@ -179,7 +179,7 @@ classdef JLLErrors<handle
             % the same size.  Takes at least two arguments (variable names
             % as strings) up to any number.
             if numel(varargin)<2; error('JLLErrors:sizeMismatch:too_few_inputs','JLLErrors.sizeMismatch needs at least 2 variable names'); end
-            varnames = strjoin(varargin{:}, ', ');
+            varnames = strjoin(varargin, ', ');
             msg = sprintf(obj.sizeMismatch_msg, varnames);
             errstruct = obj.makeErrStruct(obj.sizeMismatch_tag, msg);
             error(errstruct);
