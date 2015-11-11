@@ -20,6 +20,9 @@ argin = varargin;
 if isnumeric(argin{1}) && numel(argin{1}) == 1;
     fignum = argin{1};
     argin(1) = [];
+elseif ishandle(argin{1}) && strcmp(get(argin{1},'Type'),'figure')
+    fignum = get(argin{1},'Number');
+    argin(1) = [];
 else 
     fignum = 0;
 end
@@ -60,10 +63,25 @@ if fignum < 1; fnum = figure;
 else figure(fignum); fnum = fignum;
 end
 
+% Figure out is the axes are a map or not. This may break in matlab
+% versions before 2014b, when the graphics object was introduced.
+ch = get(figure(fignum),'children');
+im_a_map = false;
+for a=1:numel(ch)
+    if strcmpi(get(ch(a),'Type'),'axes')
+        im_a_map = ismap(ch(a));
+        break
+    end
+end
+
 if nargout > 0; varargout{1} = fnum; end
 if strcmpi(states,'all');
     for a=1:numel(usa)
-        line(usa(a).X, usa(a).Y,'color',colspec);
+        if im_a_map
+            linem(usa(a).Y, usa(a).X, 'color', colspec);
+        else
+            line(usa(a).X, usa(a).Y,'color',colspec);
+        end
         hold on
     end
 elseif not_states
@@ -80,7 +98,11 @@ elseif not_states
         if any(strcmpi(usa(b).Name,states_not_to_draw))
             continue
         else
-            line(usa(b).X, usa(b).Y, 'color',colspec)
+            if im_a_map
+                linem(usa(b).Y, usa(b).X, 'color', colspec);
+            else
+                line(usa(b).X, usa(b).Y, 'color',colspec)
+            end
             hold on
         end
     end
@@ -92,7 +114,11 @@ else
         else
             xx = find(strcmpi(states{b},state_names));
         end
-        line(usa(xx).X, usa(xx).Y,'color',colspec);
+        if im_a_map
+            linem(usa(xx).Y, usa(xx).X, 'color', colspec);
+        else
+            line(usa(xx).X, usa(xx).Y,'color',colspec);
+        end
         hold on
     end
 end
