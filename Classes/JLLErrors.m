@@ -253,7 +253,7 @@ classdef JLLErrors<handle
             narginchk(2,2)
             if ischar(variable_names)
                 variable_names = {variable_names};
-            elseif ~iscell(variable_names) || any(~iscellcontents(variable_names,'ischar'))
+            elseif ~iscell(variable_names) || any(~ismember(variable_names,'ischar'))
                 error('JLLErrors:runscript_error:bad_input','variable_names should be a string or cell of strings')
             end
             vars = strjoin(variable_names, ', ');
