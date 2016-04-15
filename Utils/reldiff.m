@@ -1,6 +1,11 @@
 function [ rdiff ] = reldiff( A, B, forcevec )
-%UNTITLED6 Summary of this function goes here
-%   Detailed explanation goes here
+%RDIFF = RELDIFF( A, B ) Computes the relative difference of A - B.
+%   Convenience function to make it require less typing to compute a
+%   relative difference between A and B as (A - B)./B. Multiply the result
+%   by 100 to convert to percent difference.
+%
+%   RDIFF = RELDIFF( A, B, TRUE ) will reshape the output into a column
+%   vector.
 
 if nargin < 3;
     forcevec = 0;

@@ -5,6 +5,10 @@ function [ user_ans ] = ask_multichoice( prompt, allowed_options, varargin )
 %
 %   'default' - choose a default value for the response.
 %
+%   'list' - boolean, if false (default), will require the user to type
+%   their response. If true, will present a list of options and ask the
+%   user to enter the number corresponding to that option.
+%
 %   'softquit' - boolean, if false (default), will exit if the user enters
 %   'q' at any point by throwing an error. If true, this will cause the
 %   function to return a 0 (the number not the string).
@@ -29,6 +33,7 @@ end
 
 p = inputParser;
 p.addParameter('default',0);
+p.addParameter('list',false);
 p.addParameter('softquit',false,@(x) (islogical(x) && isscalar(x)));
 p.parse(varargin{:});
 pout = p.Results;
@@ -43,19 +48,43 @@ else
     use_default = true;
 end
 softquit = pout.softquit;
+print_list = pout.list;
 
-if use_default
-    fprintf('%s (%s - %s is default): ', prompt, strjoin(allowed_options, ', '), default);
-else
-    fprintf('%s (%s): ', prompt, strjoin(allowed_options, ', '));
+if ~isscalar(print_list) || (~islogical(print_list) && ~isnumeric(print_list))
+    E.badinput('The parameter ''list'' must be a scalar logical or number')
 end
+
+if print_list
+    fprintf('%s:\n',prompt);
+    for a=1:numel(allowed_options)
+        fprintf('\t%d - %s',a,allowed_options{a});
+        if use_default && strcmpi(allowed_options{a},default)
+            fprintf(' (default)');
+        end
+        fprintf('\n');
+    end
+    fprintf('Enter 1 to %d or q to quit: ',numel(allowed_options));
+else
+    if use_default
+        fprintf('%s (%s - %s is default): ', prompt, strjoin(allowed_options, ', '), default);
+    else
+        fprintf('%s (%s): ', prompt, strjoin(allowed_options, ', '));
+    end
+end
+
 
 while true
     user_ans = lower(input('', 's'));
+    if print_list
+        user_ind = str2double(user_ans);
+    end
     if use_default && isempty(user_ans)
         user_ans = default;
         return
-    elseif ismember(user_ans, allowed_options)
+    elseif print_list && user_ind >= 1 && user_ind <= numel(allowed_options)
+        user_ans = allowed_options{user_ind};
+        return
+    elseif ~print_list && ismember(user_ans, allowed_options)
         return
     elseif strcmpi(user_ans, 'q')
         if softquit
@@ -64,7 +93,11 @@ while true
             E.userCancel()
         end
     else
-        fprintf('You must choose one of %s, or enter q to quit: ', strjoin(allowed_options, ', '));
+        if print_list
+            fprintf('You must enter 1 to %d or q to quit: ',numel(allowed_options));
+        else
+            fprintf('You must choose one of %s, or enter q to quit: ', strjoin(allowed_options, ', '));
+        end
     end
     
 end
