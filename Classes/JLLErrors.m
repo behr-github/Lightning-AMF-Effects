@@ -72,7 +72,10 @@ classdef JLLErrors<handle
     
     methods
         function obj = JLLErrors()
-            %Will identify the calling function, or default to 'base' if the calling function cannot be identified (i.e. if this is created from the command line).  This name will be used as the first part of the error identifier.
+            %Will identify the calling function, or default to 'base' if
+            %the calling function cannot be identified (i.e. if this is
+            %created from the command line).  This name will be used as the
+            %first part of the error identifier.
             s = dbstack(1);
             if numel(s)>0
                 obj.callingfxn = s(1).name;
@@ -82,7 +85,8 @@ classdef JLLErrors<handle
         end
         
         function errstruct = notScalar(obj, varname)
-            % Takes a single variable name.  Returns an error message that said variable must be a scalar.
+            % Takes a single variable name.  Returns an error message that
+            % said variable must be a scalar.
             warning('JLLErrors.notScalar is deprecated - use "badvartype" instead');
             msg = sprintf(obj.scalar_msg,varname);
             errstruct = obj.makeErrStruct(obj.scalar_tag,msg);
@@ -90,7 +94,11 @@ classdef JLLErrors<handle
         end
         
         function errstruct = badinput(obj,varargin)
-            %Returns an error structure for a bad input.  With no arguments, the default message will be displayed; if one argument is passed, that specifies the message. If multiple arguments are passed, it inserts them into the message using sprintf.
+            %Returns an error structure for a bad input.  With no
+            %arguments, the default message will be displayed; if one
+            %argument is passed, that specifies the message. If multiple
+            %arguments are passed, it inserts them into the message using
+            %sprintf.
             if numel(varargin) == 0
                 msg = obj.invalidinput_msg;
             elseif numel(varargin)==1
@@ -104,7 +112,9 @@ classdef JLLErrors<handle
         end
         
         function errstruct = badvar(obj, varname, varargin)
-            % Takes at least a variable name (as a string). Can also accept a reason for the problem, otherwise just says "see documentation"
+            % Takes at least a variable name (as a string). Can also accept
+            % a reason for the problem, otherwise just says "see
+            % documentation"
             if numel(varargin) < 1
                 problem = 'see documentation';
             else
@@ -117,7 +127,10 @@ classdef JLLErrors<handle
         end
         
         function errstruct = badvartype(obj, var, rightclass)
-            % Takes a variable of any type and a string with the correct class that that variable should be.  Will output a message indicating that the variable var is of type class(var) and should be of type rightclass.
+            % Takes a variable of any type and a string with the correct
+            % class that that variable should be.  Will output a message
+            % indicating that the variable var is of type class(var) and
+            % should be of type rightclass.
             varname = inputname(2);
             wrongclass = class(var);
             varsize = mat2str(size(var));
@@ -132,7 +145,8 @@ classdef JLLErrors<handle
         end
         
         function errstruct = filenotfound(obj, filename)
-            % Error when a file could not be found to be loaded. Takes one argument which describes the file that couldn't be loaded.
+            % Error when a file could not be found to be loaded. Takes one
+            % argument which describes the file that couldn't be loaded.
             msg = sprintf(obj.fnf_msg,filename);
             errstruct = obj.makeErrStruct(obj.fnf_tag, msg);
             error(errstruct);
@@ -154,7 +168,9 @@ classdef JLLErrors<handle
         end
         
         function errstruct = toomanyfiles(obj, varargin)
-            % Error for use when finding file names to load using wildcard characters.  Takes one or no arguments, if one is given, it will describe what kind of file is trying to be loaded.
+            % Error for use when finding file names to load using wildcard
+            % characters.  Takes one or no arguments, if one is given, it
+            % will describe what kind of file is trying to be loaded.
             if numel(varargin)>0
                 msg = sprintf(obj.tmf_msg,varargin{1});
             else
@@ -166,7 +182,10 @@ classdef JLLErrors<handle
         end
         
         function errstruct = numelMismatch(obj, varargin)
-            % Error for when an arbitrary number of variables do not have the same number of elements. Takes at least two arguments (variable names as strings) up to an unlimited number of arguments.
+            % Error for when an arbitrary number of variables do not have
+            % the same number of elements. Takes at least two arguments
+            % (variable names as strings) up to an unlimited number of
+            % arguments.
             if numel(varargin)<2; error('JLLErrors:numelMismatch:too_few_inputs','JLLErrors.numelMismatch needs at least 2 variable names'); end
             varnames = strjoin(varargin{:}, ', ');
             msg = sprintf(msgspec, varnames);
@@ -186,7 +205,10 @@ classdef JLLErrors<handle
         end
         
         function errstruct = dimMismatch(obj, varargin)
-            % Error for when an arbitrary number of variables do not have the same number of elements. Takes at least two arguments (variable names as strings) up to an unlimited number of arguments.
+            % Error for when an arbitrary number of variables do not have
+            % the same number of elements. Takes at least two arguments
+            % (variable names as strings) up to an unlimited number of
+            % arguments.
             if numel(varargin)<2; error('JLLErrors:dimMismatch:too_few_inputs','JLLErrors.numelMismatch needs at least 2 variable names'); end
             varnamespec = [repmat('''%s'', ',1,numel(varargin)-1),'''%s'''];
             msgspec = sprintf(obj.dimMismatch_msg, varnamespec);
@@ -196,13 +218,15 @@ classdef JLLErrors<handle
         end
         
         function errstruct = userCancel(obj)
-            % Error for when the user cancels out of a dialogue box. Takes no arguments.
+            % Error for when the user cancels out of a dialogue box. Takes
+            % no arguments.
             errstruct = obj.makeErrStruct(obj.usercancel_tag,obj.usercancel_msg);
             error(errstruct);
         end
         
         function errstruct = numberArguments(obj,nmin,nmax)
-            % Error for inputting the wrong number of arguments to a function. 
+            % Error for inputting the wrong number of arguments to a
+            % function.
             narginchk(3,3);
             msg = sprintf(obj.numArgs_msg,nmin,nmax);
             errstruct = obj.makeErrStruct(obj.numArgs_tag, msg);
@@ -262,7 +286,11 @@ classdef JLLErrors<handle
         end
         
         function errstruct = callError(obj, tag, msg, varargin)
-            % A very simple method that creates an error with a custom message and id tag (second and first arguments respectively). The resulting error will have the identifier 'callingfxn:tag' and the specified message. Additional arguments will be inserted into the msg using sprintf
+            % A very simple method that creates an error with a custom
+            % message and id tag (second and first arguments respectively).
+            % The resulting error will have the identifier 'callingfxn:tag'
+            % and the specified message. Additional arguments will be
+            % inserted into the msg using sprintf
             if numel(varargin) > 0
                 msg = sprintf(msg,varargin{:});
             end
