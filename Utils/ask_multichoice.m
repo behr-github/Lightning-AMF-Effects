@@ -84,7 +84,7 @@ while true
     elseif print_list && user_ind >= 1 && user_ind <= numel(allowed_options)
         user_ans = allowed_options{user_ind};
         return
-    elseif ~print_list && ismember(user_ans, allowed_options)
+    elseif ~print_list && ismember(user_ans, lower(allowed_options))
         return
     elseif strcmpi(user_ans, 'q')
         if softquit

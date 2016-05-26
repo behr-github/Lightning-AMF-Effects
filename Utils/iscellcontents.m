@@ -16,8 +16,8 @@ E = JLLErrors;
 narginchk(2,2);
 if ~iscell(cell_in)
     error(E.badinput('"cell_in" must be a cell array'));
-elseif ~ischar(test_fxn)
-    error(E.badinput('"test_fxn" must be a string'));
+elseif ~ischar(test_fxn) && ~isa(test_fxn,'function_handle')
+    error(E.badinput('"test_fxn" must be a string or function handle'));
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%
@@ -25,7 +25,11 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%
 
 chk = false(size(cell_in));
-test_hndl = str2func(test_fxn);
+if ischar(test_fxn)
+    test_hndl = str2func(test_fxn);
+else
+    test_hndl = test_fxn;
+end
 
 for a=1:numel(cell_in)
     try

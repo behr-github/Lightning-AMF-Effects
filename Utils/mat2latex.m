@@ -21,6 +21,13 @@ function mat2latex(M, format_spec, uncertainty_dim)
 %   MAT2LATEX( M, 'u', UNCERTAINTY_DIM ) is a shorthand for the last
 %   syntax.
 %
+%   MAT2LATEX( M, 'u10', UNCERTAINTY_DIM ) will alter the output slightly
+%   so that any value that would be printed in exponential with '10^{1}' is
+%   printed in regular notation instead (i.e. 9. \pm 4 \times 10^{1} would
+%   be given as just 90 \pm 40). This does not alter values with negative
+%   exponents. Note that you can use any power of 10 instead; 'u100',
+%   'u1000', 'u1000000' are all valid as well.
+%
 %   MAT2LATEX( M, FORMAT_SPEC, UNCERTAINTY_DIM ) combines the previous two
 %   syntaxes.
 
@@ -83,8 +90,9 @@ end
 for a=1:astep:sz(1)
     for b=1:bstep:sz(2)
         if isnumeric(M{a,b})
-            if strcmpi(format_spec,'uncertainty') || strcmpi(format_spec, 'u')
-                this_fstr = format_uncert;
+            if strcmpi(format_spec,'uncertainty') || (~isempty(regexp(format_spec, 'u\d*', 'once')) && isempty(strfind(format_spec, '%')))
+                maxplace = str2double(regexp(format_spec,'\d*','match','once'));
+                this_fstr = format_uncert(maxplace);
             else
                 this_fstr = format_normal;
             end
@@ -107,7 +115,7 @@ if warn_neg_uncert
 end
 
 % Nested functions to parse numbers
-    function fstr = format_uncert
+    function fstr = format_uncert(maxplace)
         % Get the value and uncertainty following the usual rules, but
         % round them to the first non-zero place in the uncertainty first.
         v = M{a,b};
@@ -149,7 +157,7 @@ end
                 ustr = sprintf('%.1g',u);
                 fstr = regexprep(ustr,'\d','0');
             else
-                %fstr = '0 \pm 0
+                E.notimplemented('both value and uncertainty are 0');
             end
             if b < (sz(2) - bstep+1)
                 fstr=sprintf(fstr1b, fstr);
@@ -157,6 +165,9 @@ end
                 fstr=sprintf(fstr2b, fstr);
             end
             fstr = format_exponent(fstr);
+            if ~isnan(maxplace)
+                fstr = remove_exponent(fstr, maxplace);
+            end
             fstr = insert_uncertainty(u, fstr);
             fstr = strrep(fstr,'\\\\','\\');
         end
@@ -202,6 +213,38 @@ end
 if isempty(strfind(fstr,'$'))
     fstr = regexprep(fstr,' (?=&|\\)','$ ');
 end
+end
+
+function fstr = remove_exponent(fstr, maxplace)
+% This will convert numbers from exponential notation to normal up to the
+% power specified, so remove_exponent(fstr, 10) will make any powers of
+% 10^1 or 10^-1 into just regular notation, (fstr, 100) up to 10^2, 10^-2,
+% and so on.
+
+% First, see if there is an exponent, if not we can return right now.
+s = regexp(fstr, '10\^{','once');
+if isempty(s)
+    return
+end
+
+% Otherwise find the exponent. If it is outside our range, we can return.
+[es, ee] = regexp(fstr,'(?<=10\^{)-?\d*(?=})');
+
+e = str2double(fstr(es:ee));
+if e < 0 || e > log10(maxplace)
+    return
+end
+
+% Get the value, scale it as necessary, then convert back into string
+origval = regexp(fstr,'\d*\.?\d*(?=\o{40})','once','match');
+val = str2double(origval)*10^e;
+valstr = num2str(val);
+
+% Remove the x 10^{} part
+fstr = regexprep(fstr, '\o{40}\\times.*}', '');
+% and replace the original value
+fstr = regexprep(fstr, origval, valstr);
+
 end
 
 function fstr = insert_uncertainty(u, fstr)

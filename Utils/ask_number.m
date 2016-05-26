@@ -78,17 +78,28 @@ while true
             E.userCancel()
         end
     else
-        user_ans = str2double(user_ans);
-        if isnan(user_ans)
-            fprintf('\tNumber not recognized by str2double: number must be a single value (q to quit): ');
-        elseif ~testfxn(user_ans)
-            if isempty(testmsg)
-                fprintf('\tValue must cause the function %s to return true. Try again, or q to quit: ', functiontostring(testfxn));
+        user_ans = str2double(strsplit(strtrim(user_ans)));
+        try
+            if any(isnan(user_ans))
+                fprintf('\tNumber not recognized by str2double (q to quit): ');
+            elseif ~testfxn(user_ans)
+                if isempty(testmsg)
+                    fprintf('\tValue must cause the function %s to return true. Try again, or q to quit: ', functiontostring(testfxn));
+                else
+                    fprintf('\t%s (q to quit): ', testmsg);
+                end
             else
-                fprintf('\t%s (q to quit): ', testmsg);
+                return
             end
-        else
-            return
+        catch err
+            % If the test function is written expecting a scalar value,
+            % then it might cause issues during the call to testfxn. This
+            % will most commonly happen with the use of && or || with non
+            % scalar logicals, so if that happens, print a special message.
+            if strcmp(err.identifier,'MATLAB:nonLogicalConditional')
+                fprintf('\tA scalar value seems to be expected. If this is not true, check the use of testfxn in ask_number\n');
+                fprintf('\tTry again or q to quit: ');
+            end
         end
     end
     

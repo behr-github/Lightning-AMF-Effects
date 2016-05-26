@@ -39,13 +39,13 @@ function [ strout ] = tex_in_printf( strin, n_printf )
 
 % The regular expression that will identify all instances of a backslash
 % not part of the special characters \a, \b, \f, \n, \r, \t, \v, \xN, \N
-% (where N is some number)
+% (where N is some number) followed by a space or end of string
 %
 % The '(?! )' notation is a look-ahead assertion that requires the
 % backslash not be followed by any of the patterns listed but does not
 % return those patterns as part of the string to be replaced.
 
-regex_pat = '\\(?!a\s|b\s|f\s|n\s|r\s|t\s|v\s|x\d*\s|\d*\s)';
+regex_pat = '\\(?!a\s|b\s|f\s|n\s|r\s|t\s|v\s|x\d+\s|\d+\s|a$|b$|f$|n$|r$|t$|v$|x\d+$|\d+$)';
 %regex_pat = '\\(?!a\s|b\s|f\s|n\s|r\s|t\s|v\s)';
 
 % This will figure out how many times the backslashs must be escaped. We
