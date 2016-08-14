@@ -1,42 +1,71 @@
 function [ varargout ] = state_outlines( varargin )
-%state_outlines(states): Draws state outlines using MATLAB shapefiles
-%   Plots outlines of states using MATLAB shape files, which makes them
-%   easier to plot more stuff on top of than using m_map. Pass specific
-%   state abbreviations, or 'all' (or no arguments) to draw to full US
+%STATE_OUTLINES Draws state outlines using MATLAB shapefiles
+%   STATE_OUTLINES() will draw all US states on the current figure in
+%   black.
 %
-%   Pass a figure number as the first argument to draw the outlines on the
-%   specified figure.  gcf returns a number, and so works just fine as this
-%   argument.
+%   STATE_OUTLINES( FIGNUM ) will draw all US states on Figure number
+%   FIGNUM in black.
 %
-%   Most color specifications can be passed as the second argument (or the
-%   first if not also passing a figure number).  This will recolor the
-%   state outlines from their default black.  Note that only 1 x 3 vectors
-%   or 1 character strings will work.
+%   STATE_OUTLINES( COLSPEC ) will draw all US stats on the current figure
+%   using the color defined by COLSPEC. COLSPEC can be one of the Matlab
+%   single character color specifications (see
+%   http://www.mathworks.com/help/matlab/ref/colorspec.html) of a 1x3
+%   vector specifying an RGB triplet.
+%
+%   STATE_OUTLINES( FIGNUM, COLSPEC ) combined the previous two syntaxes.
+%
+%   STATE_OUTLINES( ___, STATES ) can be used to plot a specific subset of
+%   states, defined by their two letter postal abbreviation or the full
+%   name. This can be combined with any of the previous syntaxes to specify
+%   a figure number, color spec, both, or neither.
+%
+%   STATE_OUTLINES( ___, 'not', STATES ) can be used to print all states
+%   EXCEPT those specified. Again, it can be combined with any of the first
+%   four syntaxes to specify figure number, color spec, both, or neither.
+%
+%   Examples:
+%       state_outlines() will plot all US states on the current figure.
+%
+%       state_outlines(5) will plot all US states on Figure 5.
+%
+%       state_outlines('b') will plot all US states on the current figure
+%       in blue.
+%
+%       state_outlines(2, 'r') will plot all US states on Figure 2 in red.
+%
+%       state_outlines('pa','oh','wv','va') will plot only Pennsylvania,
+%       Ohio, West Virginia, and Virginia on the current figure in black.
+%
+%       state_outlines(3, 'b', 'not', 'ak', 'hi') will plot all states
+%       EXCEPT Alaska and Hawaii in blue on Figure 3.
 %
 %   Josh Laughner <joshlaugh5@gmail.com> Jul 2014
 
 argin = varargin;
-
-if isnumeric(argin{1}) && numel(argin{1}) == 1;
-    fignum = argin{1};
-    argin(1) = [];
-elseif ishandle(argin{1}) && strcmp(get(argin{1},'Type'),'figure')
-    fignum = get(argin{1},'Number');
-    argin(1) = [];
-else 
-    fignum = 0;
-end
-
-if ischar(argin{1}) && length(argin{1}) == 1;
-    colspec = argin{1}; 
-    argin(1) = [];
-elseif isnumeric(argin{1}) && length(argin(1))==3;
-    colspec = argin{1};
-    argin(1) = [];
+if numel(argin) > 0
+    if isnumeric(argin{1}) && numel(argin{1}) == 1;
+        fignum = argin{1};
+        argin(1) = [];
+    elseif ~ischar(argin{1}) && ishandle(argin{1}) && strcmp(get(argin{1},'Type'),'figure')
+        fignum = get(argin{1},'Number');
+        argin(1) = [];
+    else
+        fignum = get(gcf,'Number');
+    end
+    
+    if ischar(argin{1}) && length(argin{1}) == 1;
+        colspec = argin{1};
+        argin(1) = [];
+    elseif isnumeric(argin{1}) && length(argin(1))==3;
+        colspec = argin{1};
+        argin(1) = [];
+    else
+        colspec = 'k';
+    end
 else
+    fignum = get(gcf,'Number');
     colspec = 'k';
 end
-    
 
 not_states = false;
 if nargin == 0 || isempty(argin);

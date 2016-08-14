@@ -32,6 +32,7 @@ p.addOptional('u',[],@isnumeric);
 p.addParameter('direction','y',@(x) any(strcmpi(x,{'x','y'})));
 p.addParameter('color','b');
 p.addParameter('linewidth',0.5);
+p.addParameter('parent',gca);
 p.addParameter('tipscale',1,@isscalar);
 
 p.parse(x,y,l,varargin{:});
@@ -43,6 +44,7 @@ u = pout.u;
 direction = pout.direction;
 color = pout.color;
 width = pout.linewidth;
+parent = pout.parent;
 tipscale = pout.tipscale;
 
 if isempty(u); u=l; end
@@ -93,9 +95,9 @@ indpts(8,:) = tip_r;
 indpts(9,:) = NaN;
 
 if strcmpi(direction,'x');
-    l=line(errpts,indpts,'color',color,'linewidth',width);
+    l=line(errpts, indpts, 'color', color, 'linewidth', width, 'parent', parent);
 elseif strcmpi(direction, 'y');
-    l=line(indpts,errpts,'color',color,'linewidth',width);
+    l=line(indpts, errpts, 'color', color, 'linewidth', width, 'parent', parent);
 end
 
 if nargout > 0

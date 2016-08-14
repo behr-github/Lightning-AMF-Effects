@@ -1,4 +1,4 @@
-function mat2latex(M, format_spec, uncertainty_dim)
+function mat2latex(M, format_spec, uncertainty_dim, asymmetry)
 % MAT2LATEX( M ) Prints a matrix, M in Latex-table format
 %   Takes a numeric matrix or a cell array  and prints out to the command window that matrix
 %   formatted such that it can be copied into a Latex table. 
@@ -13,6 +13,9 @@ function mat2latex(M, format_spec, uncertainty_dim)
 %   is 1, then the first row of M should contain values, the second row the
 %   uncertainties in the first row, the third row the next set of values,
 %   the fourth row the uncertainties for the third row, and so on.
+%   
+%   MAT2LATEX( M, FORMAT_SPEC, UNCERTAINTY_DIM ) combines the previous two
+%   syntaxes.
 %
 %   MAT2LATEX( M, 'uncertainty', UNCERTAINTY_DIM ) will format any numbers
 %   such that the last digit in the value is the first digit in the
@@ -28,19 +31,40 @@ function mat2latex(M, format_spec, uncertainty_dim)
 %   exponents. Note that you can use any power of 10 instead; 'u100',
 %   'u1000', 'u1000000' are all valid as well.
 %
-%   MAT2LATEX( M, FORMAT_SPEC, UNCERTAINTY_DIM ) combines the previous two
-%   syntaxes.
+%   MAT2LATEX( M, ___, UNCERTAINTY_DIM, 'asym' ) will allow there to be
+%   asymmetric uncertainty along the specified dimension. The matrix, M,
+%   must rotate [value, lower uncertainty, upper uncertainty] along the
+%   UNCERTAINTY_DIM. You may omit a format string to use the default.
 
+default_format_spec = '%g';
 if nargin < 2
-    format_spec = '%g';
-    uncertainty_dim = 0; % do not include uncertainty.
+    format_spec = default_format_spec;
+    uncertainty_dim = 0; % do not include uncertainty. Deafult asym_bool set below
 elseif nargin == 2
+    % If only two arguments, determine if the format spec or uncertainty
+    % dimension was passed
     if isnumeric(format_spec)
         uncertainty_dim = format_spec;
         format_spec = '%g';
     else
         uncertainty_dim = 0;
     end
+elseif nargin == 3
+    % Only two possibilities: either a format string and uncertainty dim
+    % have been passed, or an uncertainty dim and the 'asym' string
+    if isnumeric(format_spec)
+        asymmetry = uncertainty_dim;
+        uncertainty_dim = format_spec;
+        format_spec = default_format_spec;
+    end
+end
+
+asym_bool = false;
+if exist('asymmetry','var') && ischar(asymmetry) && strcmpi(asymmetry,'asym')
+    asym_bool = true;
+end
+if asym_bool && uncertainty_dim == 0
+    E.badinput('A non-zero uncertainty dimension must be specified to use asymmetric uncertainty')
 end
 
 
@@ -56,8 +80,10 @@ if ~ischar(format_spec)
 end
 if ~isnumeric(uncertainty_dim) || uncertainty_dim < 0 || uncertainty_dim > 2
     E.badinput('UNCERTAINTY_DIM must be 0 (no uncertainties given), 1, or 2')
-elseif uncertainty_dim > 0 && mod(size(M,uncertainty_dim),2) ~= 0
-    E.badinput('M must have an even number of entries along the UNCERTAINTY_DIM')
+elseif uncertainty_dim > 0 && mod(size(M,uncertainty_dim),2) ~= 0 && ~asym_bool
+    E.badinput('M must have an even number of entries along the UNCERTAINTY_DIM when using symmetrical uncertainties')
+elseif uncertainty_dim > 0 && mod(size(M,uncertainty_dim),3) ~= 0 && asym_bool
+    E.badinput('M must have a multiple of 3 entries along the UNCERTAINTY_DIM when using asymmetrical uncertainties')
 end
 
 if ~iscell(M)
@@ -76,14 +102,15 @@ fstr2b = tex_in_printf('%s \ \n',3);
 
 
 sz = size(M);
+uncert_step = asym_bool + 2; % a little trickery to give 2 if using asymmetrical uncertainty, 1 otherwise
 if uncertainty_dim == 1
-    astep = 2;
+    astep = uncert_step;
 else
     astep = 1;
 end
 
 if uncertainty_dim == 2
-    bstep = 2;
+    bstep = uncert_step;
 else
     bstep = 1;
 end
@@ -92,7 +119,11 @@ for a=1:astep:sz(1)
         if isnumeric(M{a,b})
             if strcmpi(format_spec,'uncertainty') || (~isempty(regexp(format_spec, 'u\d*', 'once')) && isempty(strfind(format_spec, '%')))
                 maxplace = str2double(regexp(format_spec,'\d*','match','once'));
-                this_fstr = format_uncert(maxplace);
+                if asym_bool
+                    this_fstr = format_asym_uncert(maxplace);
+                else
+                    this_fstr = format_uncert(maxplace);
+                end
             else
                 this_fstr = format_normal;
             end
@@ -115,6 +146,24 @@ if warn_neg_uncert
 end
 
 % Nested functions to parse numbers
+    function fstr = format_asym_uncert(maxplace)
+        % This is similar to format_uncert, except that we need to
+        % accomodate two different uncertainties. This means that the
+        % string itself will be different (the upper uncertainty as
+        % superscript and lower as subscript) but we also need to choose
+        % the place to round to from the smaller of the two uncertainties.
+        v = M{a,b};
+        if uncertainty_dim == 1
+            u = [M{a+1,b}, M{a+2,b}]; % lower then upper uncertainty
+        elseif uncertainty_dim == 2
+            u = [M{a,b+1}, M{a,b+2}];
+        else
+            E.badinput('Cannot format the values by rounding to the first place of the uncertainty if no uncertainty given (uncertainty_dim must be >0).');
+        end
+        
+        fstr = format_general_uncert(v, u, maxplace);
+    end
+
     function fstr = format_uncert(maxplace)
         % Get the value and uncertainty following the usual rules, but
         % round them to the first non-zero place in the uncertainty first.
@@ -126,51 +175,62 @@ end
         else
             E.badinput('Cannot format the values by rounding to the first place of the uncertainty if no uncertainty given (uncertainty_dim must be >0).');
         end
-        if u < 0
+        
+        fstr = format_general_uncert(v, u, maxplace);
+    end
+
+    function fstr = format_general_uncert(v, u, maxplace)
+        if any(u<0)
             warn_neg_uncert = true;
         end
         u = abs(u);
-        place = 10^(floor(log10(u)));
-        v = round(v/place)*place;
-        u = round(u/place)*place;
+        place = min(10 .^ floor(log10(u)));
+        v = round(v / place)*place;
+        u = round(u ./ place) .* place;
+        % The effect is that the larger uncertainty may have extra places,
+        % but the smaller one will always have one.
         
         % Calculate the number of significant figures to be left in v
         % Testing if log10 is infinite rather than just u == 0 or v == 0
         % because it is if log10 = -Inf that directly causes the problem,
         % so I want to avoid any little floating point errors
-        if isinf(log10(v)) && isinf(log10(u))
-            fstr = '0 \pm 0$';
-            if b < (sz(2) - bstep+1)
-                fstr=sprintf(fstr1b, fstr);
+        
+        if isinf(log10(v)) && all(isinf(log10(u)))
+            if asym_bool
+                fstr = '0^{+0}_{-0}$';
             else
-                fstr=sprintf(fstr2b, fstr);
+                fstr = '0 \pm 0$';
             end
+        elseif ~isinf(log10(v))
+            % Once again we will round off to the smaller of the two
+            % uncertainties, if using asymmetric uncertainty.
+            
+            nsig = floor(log10(v)) - min(floor(log10(u))) + 1;
+            fstr = sprintf('%#.*g',nsig,v);
+        elseif any(~isinf(log10(u)))
+            % If the value has become 0, then we will need to use u to set
+            % the format, as long as it isn't 0! We cheat by formatting
+            % u to have one significant digit, then replacing that
+            % digit with a zero to become v, e.g. if u is 0.1, this
+            % produces 0.0 for v (not u) which has the right number of
+            % places. Again we use the smaller of u,
+            ustr = sprintf('%.1g',min(u(~isinf(u))));
+            fstr = regexprep(ustr,'\d','0');
         else
-            if ~isinf(log10(v))
-                nsig = floor(log10(v)) - floor(log10(u)) + 1;
-                
-                % Format v accordingly and insert uncertainty
-                fstr = sprintf('%#.*g',nsig,v);
-            elseif ~isinf(log10(u));
-                % If the value has become 0, then we will need to use u to set
-                % the format, as long as it isn't 0!
-                ustr = sprintf('%.1g',u);
-                fstr = regexprep(ustr,'\d','0');
-            else
-                E.notimplemented('both value and uncertainty are 0');
-            end
-            if b < (sz(2) - bstep+1)
-                fstr=sprintf(fstr1b, fstr);
-            else
-                fstr=sprintf(fstr2b, fstr);
-            end
-            fstr = format_exponent(fstr);
-            if ~isnan(maxplace)
-                fstr = remove_exponent(fstr, maxplace);
-            end
-            fstr = insert_uncertainty(u, fstr);
-            fstr = strrep(fstr,'\\\\','\\');
+            E.unknownError('How did we get here?')
         end
+        
+        if b < (sz(2) - bstep+1)
+            fstr=sprintf(fstr1b, fstr);
+        else
+            fstr=sprintf(fstr2b, fstr);
+        end
+        fstr = format_exponent(fstr);
+        if ~isnan(maxplace)
+            fstr = remove_exponent(fstr, maxplace);
+        end
+        fstr = insert_uncertainty(u, fstr);
+        fstr = strrep(fstr,'\\\\','\\');
     end
 
     function fstr = format_normal
@@ -185,11 +245,19 @@ end
         % Add in uncertainty, if desired
         if uncertainty_dim > 0
             if uncertainty_dim == 1
-                u = M{a+1,b};
+                if ~asym_bool
+                    u = M{a+1,b};
+                else
+                    u = [M{a+1,b}, M{a+2,b}];
+                end
             elseif uncertainty_dim == 2
-                u = M{a,b+1};
+                if ~asym_bool
+                    u = M{a,b+1};
+                else
+                    u = [M{a,b+1}, M{a,b+2}];
+                end
             end
-            if u < 0
+            if any(u < 0)
                 warn_neg_uncert = true;
                 u = abs(u);
             end
@@ -257,7 +325,7 @@ if isempty(es)
 else
     val_exp = str2double(fstr(es:ee));
 end
-u = u * 10^(-val_exp);
+u = u .* 10^(-val_exp);
 % figure out how many figures after the decimal point there
 % are in the value
 [ds,de] = regexp(fstr,'\.\d*');
@@ -267,9 +335,24 @@ else
     ndec = 0;
     de = regexp(fstr, '(\$|\o{40}\\times)')-1;
 end
-ustr = sprintf('%.*f', ndec, u);
-% insert the uncertainty
-fstr = sprintf('%s \\pm %s%s',fstr(1:de),ustr,fstr(de+1:end));
+
+if isscalar(u)
+    % This handles symmetrical uncertainty pretty easily. Convert u to have
+    % the right number of decimal places, then insert
+    ustr = sprintf('%.*f', ndec, u);
+    % insert the uncertainty
+    fstr = sprintf('%s \\pm %s%s',fstr(1:de),ustr,fstr(de+1:end));
+else
+    % If using asymmetrical uncertainty, it's very similar because we've
+    % deliberately rounded u so that it's last digit is the first digit of
+    % the smaller uncertainty. So if we turn both uncertainties into
+    % numbers with the same amount of post-decimal digits, the larger one
+    % may have several non-zero digits, but the smaller one should only
+    % have 1.
+    ustr_l = sprintf('%.*f',ndec,u(1));
+    ustr_u = sprintf('%.*f',ndec,u(2));
+    fstr = sprintf('%s_{-%s}^{+%s} %s',fstr(1:de),ustr_l,ustr_u,fstr(de+1:end));
+end
 end
 
 function [str, dec_ind] = round_str(str, index)
