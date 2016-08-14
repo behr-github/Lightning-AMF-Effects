@@ -84,14 +84,14 @@ errpts(8,:) = emax(:);
 errpts(9,:) = NaN;
 
 indpts = zeros(9,n);
-indpts(1,:) = ind_axis;
-indpts(2,:) = ind_axis;
+indpts(1,:) = ind_axis(:);
+indpts(2,:) = ind_axis(:);
 indpts(3,:) = NaN;
-indpts(4,:) = tip_l;
-indpts(5,:) = tip_r;
+indpts(4,:) = tip_l(:);
+indpts(5,:) = tip_r(:);
 indpts(6,:) = NaN;
-indpts(7,:) = tip_l;
-indpts(8,:) = tip_r;
+indpts(7,:) = tip_l(:);
+indpts(8,:) = tip_r(:);
 indpts(9,:) = NaN;
 
 if strcmpi(direction,'x');
