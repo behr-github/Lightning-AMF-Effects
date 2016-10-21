@@ -103,13 +103,23 @@ for a=1:numel(ch)
     end
 end
 
-if nargout > 0; varargout{1} = fnum; end
+draw_lines = true;
+if nargout == 1; 
+    varargout{1} = fnum; 
+elseif nargout == 2;
+    draw_lines = false;
+    lon_out = [];
+    lat_out = [];
+end
 if strcmpi(states,'all');
     for a=1:numel(usa)
-        if im_a_map
+        if im_a_map && draw_lines
             linem(usa(a).Y, usa(a).X, 'color', colspec);
-        else
+        elseif draw_lines
             line(usa(a).X, usa(a).Y,'color',colspec);
+        else
+            lon_out = cat(1, lon_out, usa(a).X(:), nan);
+            lat_out = cat(1, lat_out, usa(a).Y(:), nan);
         end
         hold on
     end
@@ -127,10 +137,13 @@ elseif not_states
         if any(strcmpi(usa(b).Name,states_not_to_draw))
             continue
         else
-            if im_a_map
+            if im_a_map && draw_lines
                 linem(usa(b).Y, usa(b).X, 'color', colspec);
-            else
+            elseif draw_lines
                 line(usa(b).X, usa(b).Y, 'color',colspec)
+            else
+                lon_out = cat(1, lon_out, usa(b).X(:), nan);
+                lat_out = cat(1, lat_out, usa(b).Y(:), nan);
             end
             hold on
         end
@@ -143,13 +156,21 @@ else
         else
             xx = find(strcmpi(states{b},state_names));
         end
-        if im_a_map
+        if im_a_map && draw_lines
             linem(usa(xx).Y, usa(xx).X, 'color', colspec);
-        else
+        elseif draw_lines
             line(usa(xx).X, usa(xx).Y,'color',colspec);
+        else
+            lon_out = cat(1, lon_out, usa(xx).X(:), nan);
+            lat_out = cat(1, lat_out, usa(xx).Y(:), nan);
         end
         hold on
     end
+end
+
+if ~draw_lines
+    varargout{1} = lon_out;
+    varargout{2} = lat_out;
 end
 end
 
