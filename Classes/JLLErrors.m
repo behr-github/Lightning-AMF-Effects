@@ -62,6 +62,10 @@ classdef JLLErrors<handle
         nodata_msg = 'The variable(s) %s have no valid data';
         runscript_tag = 'runscript_var_unset';
         runscript_msg = 'The following variables do not appear to be set in the calling runscript: %s';
+        fxnremoved_tag = 'old_function';
+        fxnremoved_msg = 'The function %s has been removed; replace calls to it with %s';
+        notdisplay_tag = 'not_display';
+        notdisplay_msg = 'MATLAB does not have an active display. %s';
         
         % A list of custom identifiers and messages and reference to those
         % entries
@@ -102,7 +106,7 @@ classdef JLLErrors<handle
             if numel(varargin) == 0
                 msg = obj.invalidinput_msg;
             elseif numel(varargin)==1
-                msg = varargin{1};
+                msg = sprintf(varargin{1});
             else
                 msg = sprintf(varargin{1},varargin{2:end});
             end
@@ -260,6 +264,21 @@ classdef JLLErrors<handle
             error(errstruct);
         end
         
+        function errstruct = fxnremoved(obj, varargin)
+            % Error to use when a function has been removed. The main form
+            % expected is for when there is a clear replacement, in which
+            % case the old function name should be given first, then the
+            % new function name as arguments. The second case takes a
+            % custom message as a single input.
+            if numel(varargin) == 2
+                msg = sprintf(obj.fxnremoved_msg, varargin{:});
+            elseif numel(varargin) == 1
+                msg = varargin{1};
+            end
+            errstruct = obj.makeErrStruct(obj.fxnremoved_tag, msg);
+            error(errstruct);
+        end
+        
         function errstruct = nodata(obj, variable_names)
             % Error to use when a variable or variables has no valid data
             % (often empty or all NaNs). Takes one argument, the variable
@@ -282,6 +301,26 @@ classdef JLLErrors<handle
             end
             vars = strjoin(variable_names, ', ');
             errstruct = obj.makeErrStruct(obj.runscript_tag, sprintf(obj.runscript_msg, vars));
+            error(errstruct);
+        end
+        
+        function errstruct = notdisplay(obj, varargin)
+            % Error to use if trying to access functionality that requires
+            % an active display but Matlab is running without a display
+            % (i.e. in command line over SSH). If given no arguments, will
+            % print a default message. If given one argument, it will print
+            % as it's own sentence at the end of the error message, and
+            % should explain what functionality the user was trying to
+            % call.
+            if numel(varargin) > 0
+                if ~ischar(varargin{1})
+                    error('JLLErrors:notdisplay:bad_input','If an input is given, it should be a string')
+                end
+                msg = sprintf(obj.notdisplay_msg, varargin{1});
+            else
+                msg = sprintf(obj.notdisplay_msg, 'The functionality you have tried to use requires an active display.');
+            end
+            errstruct = obj.makeErrStruct(obj.notdisplay_tag, msg);
             error(errstruct);
         end
         
