@@ -49,7 +49,7 @@ if numel(argin) > 0
     elseif ~ischar(argin{1}) && ishandle(argin{1}) && strcmp(get(argin{1},'Type'),'figure')
         fignum = get(argin{1},'Number');
         argin(1) = [];
-    else
+    elseif ~isempty(get(0,'children'))
         fignum = get(gcf,'Number');
     end
     
@@ -63,7 +63,9 @@ if numel(argin) > 0
         colspec = 'k';
     end
 else
-    fignum = get(gcf,'Number');
+    if isempty(get(0,'children'))
+        fignum = get(gcf,'Number');
+    end
     colspec = 'k';
 end
 
@@ -88,29 +90,34 @@ state_names = {'alabama','alaska','arizona','arkansas','california','colorado','
 % Read the states shapefile and plot
 usa = shaperead('usastatehi.shp');
 
-if fignum < 1; fnum = figure;
-else figure(fignum); fnum = fignum;
-end
 
-% Figure out is the axes are a map or not. This may break in matlab
-% versions before 2014b, when the graphics object was introduced.
-ch = get(figure(fignum),'children');
-im_a_map = false;
-for a=1:numel(ch)
-    if strcmpi(get(ch(a),'Type'),'axes')
-        im_a_map = ismap(ch(a));
-        break
-    end
-end
+
 
 draw_lines = true;
 if nargout == 1; 
+    if fignum < 1; fnum = figure;
+    else figure(fignum); fnum = fignum;
+    end
     varargout{1} = fnum; 
 elseif nargout == 2;
     draw_lines = false;
     lon_out = [];
     lat_out = [];
 end
+
+% Figure out is the axes are a map or not. This may break in matlab
+% versions before 2014b, when the graphics object was introduced.
+im_a_map = false;
+if draw_lines
+    ch = get(figure(fignum),'children');
+    for a=1:numel(ch)
+        if strcmpi(get(ch(a),'Type'),'axes')
+            im_a_map = ismap(ch(a));
+            break
+        end
+    end
+end
+
 if strcmpi(states,'all');
     for a=1:numel(usa)
         if im_a_map && draw_lines
@@ -145,10 +152,9 @@ elseif not_states
                 lon_out = cat(1, lon_out, usa(b).X(:), nan);
                 lat_out = cat(1, lat_out, usa(b).Y(:), nan);
             end
-            hold on
+            
         end
     end
-    hold off
 else
     for b = 1:numel(states);
         if length(states{b}) == 2
@@ -164,7 +170,6 @@ else
             lon_out = cat(1, lon_out, usa(xx).X(:), nan);
             lat_out = cat(1, lat_out, usa(xx).Y(:), nan);
         end
-        hold on
     end
 end
 
