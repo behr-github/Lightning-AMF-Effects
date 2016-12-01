@@ -42,6 +42,7 @@ function [ varargout ] = state_outlines( varargin )
 %   Josh Laughner <joshlaugh5@gmail.com> Jul 2014
 
 argin = varargin;
+fignum = -1;
 if numel(argin) > 0
     if isnumeric(argin{1}) && numel(argin{1}) == 1;
         fignum = argin{1};
@@ -63,7 +64,7 @@ if numel(argin) > 0
         colspec = 'k';
     end
 else
-    if isempty(get(0,'children'))
+    if ~isempty(get(0,'children'))
         fignum = get(gcf,'Number');
     end
     colspec = 'k';
@@ -94,7 +95,7 @@ usa = shaperead('usastatehi.shp');
 
 
 draw_lines = true;
-if nargout == 1; 
+if nargout <= 1; 
     if fignum < 1; fnum = figure;
     else figure(fignum); fnum = fignum;
     end
