@@ -66,6 +66,8 @@ classdef JLLErrors<handle
         fxnremoved_msg = 'The function %s has been removed; replace calls to it with %s';
         notdisplay_tag = 'not_display';
         notdisplay_msg = 'MATLAB does not have an active display. %s';
+        nosoln_tag = 'no_solution';
+        nosoln_msg = 'No valid solution found%s';
         
         % A list of custom identifiers and messages and reference to those
         % entries
@@ -143,8 +145,11 @@ classdef JLLErrors<handle
             error(errstruct);
         end
         
-        function errstruct = badgeo(obj)
-            errstruct = obj.makeErrStruct(obj.badgeo_tag, obj.badgeo_msg);
+        function errstruct = badgeo(obj, msg)
+            if ~exist('msg','var')
+                msg = obj.badgeo_msg;
+            end
+            errstruct = obj.makeErrStruct(obj.badgeo_tag, msg);
             error(errstruct);
         end
         
@@ -321,6 +326,22 @@ classdef JLLErrors<handle
                 msg = sprintf(obj.notdisplay_msg, 'The functionality you have tried to use requires an active display.');
             end
             errstruct = obj.makeErrStruct(obj.notdisplay_tag, msg);
+            error(errstruct);
+        end
+        
+        function errstruct = nosoln(obj, varargin)
+            % Error to use if a calculation does not return a valid
+            % solution. If no arguments given, the message will print "No
+            % valid solution found." If one argument given, it will be
+            % inserted at the end of the message "No valid solution found
+            % for case "
+            if numel(varargin) > 0
+                case_str = sprintf(' for case %s', varargin{1});
+            else
+                case_str = '.';
+            end
+            msg = sprintf(obj.nosoln_msg, case_str);
+            errstruct = obj.makeErrStruct(obj.nosoln_tag, msg);
             error(errstruct);
         end
         
