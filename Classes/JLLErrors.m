@@ -153,9 +153,14 @@ classdef JLLErrors<handle
             error(errstruct);
         end
         
-        function errstruct = filenotfound(obj, filename)
-            % Error when a file could not be found to be loaded. Takes one
-            % argument which describes the file that couldn't be loaded.
+        function errstruct = filenotfound(obj, filename, varargin)
+            % Error when a file could not be found to be loaded. Takes at
+            % least one argument which describes the file that couldn't be
+            % loaded. If multiple arguments given, they are inserted in the
+            % first one using sprintf.
+            if numel(varargin) > 0
+                filename = sprintf(filename, varargin{:});
+            end
             msg = sprintf(obj.fnf_msg,filename);
             errstruct = obj.makeErrStruct(obj.fnf_tag, msg);
             error(errstruct);
@@ -178,12 +183,20 @@ classdef JLLErrors<handle
         
         function errstruct = toomanyfiles(obj, varargin)
             % Error for use when finding file names to load using wildcard
-            % characters.  Takes one or no arguments, if one is given, it
-            % will describe what kind of file is trying to be loaded.
-            if numel(varargin)>0
+            % characters.  If given no arguments, it just gives a generic
+            % message. If given one argument, it prints "More than one ___
+            % file found...", replacing ___ with the argument. If given
+            % more than one argument, it uses the first as a totally custom
+            % string and inserts the others in using sprintf. To get a
+            % custom message without any inserted variables, just pass an
+            % empty string as the second argument.
+            if numel(varargin) > 1
+                msg = sprintf(varargin{1}, varargin{2:end});
+            elseif numel(varargin) > 0
                 msg = sprintf(obj.tmf_msg,varargin{1});
             else
                 msg = sprintf(obj.tmf_msg,'');
+                msg = strrep(msg, '  ', ' ');
             end
             
             errstruct = obj.makeErrStruct(obj.tmf_tag, msg);
