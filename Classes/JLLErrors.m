@@ -68,6 +68,8 @@ classdef JLLErrors<handle
         notdisplay_msg = 'MATLAB does not have an active display. %s';
         nosoln_tag = 'no_solution';
         nosoln_msg = 'No valid solution found%s';
+        datefmt_tag = 'bad_date_format';
+        datefmt_msg = 'Date (%s) not recognized';
         
         % A list of custom identifiers and messages and reference to those
         % entries
@@ -355,6 +357,32 @@ classdef JLLErrors<handle
             end
             msg = sprintf(obj.nosoln_msg, case_str);
             errstruct = obj.makeErrStruct(obj.nosoln_tag, msg);
+            error(errstruct);
+        end
+        
+        function errstruct = baddate(obj, date_in, varargin)
+            % Error to use if a date format is not understood. If you just
+            % pass the date, it will give the error message "Dates must be
+            % numerical datenums or strings" if the date is not numerical
+            % or a string, or "Date (<date_in>) not recognized" where
+            % <date_in> gets replaced by the date.
+            %
+            % If you pass more than one input, it will insert the second
+            % and onward into the first using sprintf.
+            if numel(varargin) > 0
+                if ~ischar(date_in) && ~isnumeric(date_in)
+                    errstruct = obj.makeErrStruct(obj.datefmt_tag, 'Dates must be numerical datenums or strings');
+                else
+                    if isnumeric(date_in)
+                        date_in = num2str(date_in);
+                    end
+                    msg = sprintf(obj.datefmt_tag, date_in);
+                    errstruct = obj.makeErrStruct(obj.datefmt_tag, msg);
+                end
+            else
+                msg = sprintf(date_in, varargin{:});
+                errstruct = obj.makeErrStruct(obj.datefmt_tag, msg);
+            end
             error(errstruct);
         end
         
