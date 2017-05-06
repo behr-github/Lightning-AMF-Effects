@@ -18,6 +18,8 @@ E = JLLErrors;
 % require that both the in and out unit be in the same category.
 UnitCategories.mixing_ratios.units = {'ppt','pptv','ppb','ppbv','ppm','ppmv','ppp','pppv'};
 UnitCategories.mixing_ratios.fxn = @mixing_ratio_conv;
+UnitCategories.pressure.units = {'Pa', 'hPa', 'kPa'};
+UnitCategories.pressure.fxn = @pressure_conv;
 
 if ischar(data) && ismember(data, {'ls','list','listunits'})
     list_units(UnitCategories)
@@ -96,6 +98,20 @@ switch unit
         conv = 1e12;
     case 'pptv'
         conv = 1e12;
+    otherwise
+        E.badinput('Unit %s not recognized as a mixing ratio')
+end
+end
+
+function conv = pressure_conv(unit)
+E=JLLErrors;
+switch unit
+    case 'Pa'
+        conv = 1;
+    case 'hPa'
+        conv = 1e-2;
+    case 'kPa' 
+        conv = 1e-3;
     otherwise
         E.badinput('Unit %s not recognized as a mixing ratio')
 end
