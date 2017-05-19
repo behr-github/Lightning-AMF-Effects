@@ -63,6 +63,5 @@ rep_pat = repmat('\',1,n);
 % Do the replacement
 strout = regexprep(strin, regex_pat, rep_pat);
 
-
 end
 

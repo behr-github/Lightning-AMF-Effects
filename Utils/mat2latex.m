@@ -1,4 +1,4 @@
-function mat2latex(M, format_spec, uncertainty_dim, asymmetry)
+function varargout = mat2latex(M, format_spec, uncertainty_dim, asymmetry)
 % MAT2LATEX( M ) Prints a matrix, M in Latex-table format
 %   Takes a numeric matrix or a cell array  and prints out to the command window that matrix
 %   formatted such that it can be copied into a Latex table. 
@@ -99,7 +99,8 @@ fstr1b = '%s & ';
 fstr2 = sprintf(tex_in_printf('%s \ \n',3), format_spec);
 fstr2b = tex_in_printf('%s \ \n',3);
 
-
+sout = '';
+print_to_screen = nargout == 0;
 
 sz = size(M);
 uncert_step = asym_bool + 2; % a little trickery to give 2 if using asymmetrical uncertainty, 1 otherwise
@@ -117,8 +118,11 @@ end
 for a=1:astep:sz(1)
     for b=1:bstep:sz(2)
         if isnumeric(M{a,b})
-            if strcmpi(format_spec,'uncertainty') || (~isempty(regexp(format_spec, 'u\d*', 'once')) && isempty(strfind(format_spec, '%')))
+            if isnan(M{a,b})
+                this_fstr = format_nan;
+            elseif strcmpi(format_spec,'uncertainty') || (~isempty(regexp(format_spec, 'u\d*', 'once')) && isempty(strfind(format_spec, '%')))
                 maxplace = str2double(regexp(format_spec,'\d*','match','once'));
+                
                 if asym_bool
                     this_fstr = format_asym_uncert(maxplace);
                 else
@@ -128,22 +132,36 @@ for a=1:astep:sz(1)
                 this_fstr = format_normal;
             end
             
-            fprintf('$%s',this_fstr);
+            lprintf('$%s',this_fstr);
         else
             if b < (sz(2) - bstep+1)
-                fprintf(fstr1b, M{a,b});
+                lprintf(fstr1b, M{a,b});
             else
-                fprintf(fstr2b, M{a,b});
+                lprintf(fstr2b, M{a,b});
             end
         end
     end
 end
 
-fprintf('\n')
+lprintf('\n')
 
 if warn_neg_uncert
     warning('Negative values of uncertainty have been replaced with positive ones');
 end
+
+if nargout > 0
+    varargout{1} = sout;
+end
+
+% Nested functions for output
+    function lprintf(s, varargin)
+        if print_to_screen
+            fprintf(s, varargin{:});
+        else
+            stemp = sprintf(s, varargin{:});
+            sout = [sout, stemp];
+        end
+    end
 
 % Nested functions to parse numbers
     function fstr = format_asym_uncert(maxplace)
@@ -262,6 +280,15 @@ end
                 u = abs(u);
             end
             fstr = insert_uncertainty(u, fstr);
+        end
+    end
+
+    function fstr = format_nan
+        if b < (sz(2) - bstep+1)
+            fstr = sprintf(fstr1b, '-$');
+        else
+            fstr = sprintf(fstr2b, '-$');
+            fstr = strrep(fstr, '\\\\','\\');
         end
     end
 

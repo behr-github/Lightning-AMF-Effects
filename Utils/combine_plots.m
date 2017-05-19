@@ -29,7 +29,7 @@ end
 % Calculate how many axes we'll need in the subplot
 nfigs = 0;
 figinds = [];
-n_obj_types = 2; % how many object types we'll try to copy. Right now 2: axes and colorbar
+n_obj_types = 3; % how many object types we'll try to copy. Right now 3: axes, legend, and colorbar
 inds = nan(1,n_obj_types+1);
 for a=1:numel(figs)
     nfigs = nfigs + sum(isgraphics(figs(a).Children, 'axes'));
@@ -41,6 +41,8 @@ for a=1:numel(figs)
     for b=1:numel(figs(a).Children)
         if isgraphics(figs(a).Children(b), 'colorbar')
             inds(3) = b;
+        elseif isgraphics(figs(a).Children(b), 'legend')
+            inds(4) = b;
         elseif isgraphics(figs(a).Children(b), 'axes')
             inds(2) = b;
             figinds = cat(1, figinds, inds);
