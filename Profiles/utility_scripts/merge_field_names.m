@@ -9,7 +9,7 @@ function [ Names, dates, directory, range_file, ground_site_dir ] = merge_field_
 %   Valid campaign designations are:
 %       arctas
 %       seac3rs/seacers
-%       discover-md/ca/tx
+%       discover-md/ca/tx/co
 %   This function will try to match the input string to one of these; it is
 %   not especially picky, so for example discovermd, Discover-MD, and
 %   Discover-AQ MD will all successfully indicate to use the field names
@@ -328,6 +328,16 @@ elseif ~isempty(regexpi(campaign_name,'intex')) && ~isempty(regexpi(campaign_nam
     
     range_files = {fullfile(main_dir, 'INTEX-B','INTEXB_Profile_UTC_Ranges.mat'),...
                    fullfile(main_dir, 'INTEX-B','INTEXB_Profile_UTC_Ranges_Inclusive.mat')};
+               
+% TEXAQS
+elseif ~isempty(regexpi(campaign_name,'texaqs','once'))
+    directory = fullfile(main_dir, 'TexAQS2000','Electra','WAS');
+    dates = {'2000-08-16','2000-09-13'};
+    
+% SOAS 
+elseif ~isempty(regexpi(campaign_name, 'soas', 'once'))
+    directory = fullfile(main_dir, 'SOAS', 'P3', '1sec');
+    dates = {'2013-05-31', '2013-07-10'};
 else
     error(E.badinput('Could not parse the given campaign name - see help for this function for suggestions of proper campaign names.'));
 end
