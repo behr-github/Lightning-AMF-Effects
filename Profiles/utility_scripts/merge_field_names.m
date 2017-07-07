@@ -336,8 +336,19 @@ elseif ~isempty(regexpi(campaign_name,'texaqs','once'))
     
 % SOAS 
 elseif ~isempty(regexpi(campaign_name, 'soas', 'once'))
+    Names.longitude = 'LONGITUDE';
+    Names.latitude = 'LATITUDE';
+    Names.gps_alt = 'GpsAlt';
+    Names.pressure_alt = 'PAlt';
+    Names.radar_alt = 'RAlt';
+    Names.pressure = 'StaticPrs';
+    Names.temperature = 'AmbTemp';
+    Names.theta = 'PotTemp';
+    Names.no2_lif = 'NO2_ppbv';
+    
     directory = fullfile(main_dir, 'SOAS', 'P3', '1sec');
     dates = {'2013-05-31', '2013-07-10'};
+    range_files = {fullfile(main_dir, 'SOAS', 'SOAS_Profile_UTC_Ranges.mat')};
 else
     error(E.badinput('Could not parse the given campaign name - see help for this function for suggestions of proper campaign names.'));
 end
