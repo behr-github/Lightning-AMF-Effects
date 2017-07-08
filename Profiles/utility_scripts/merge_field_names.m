@@ -344,7 +344,7 @@ elseif ~isempty(regexpi(campaign_name, 'soas', 'once'))
     Names.pressure = 'StaticPrs';
     Names.temperature = 'AmbTemp';
     Names.theta = 'PotTemp';
-    Names.no2_lif = 'NO2_ppbv';
+    Names.no2_ncar = 'NO2_ppbv';
     
     directory = fullfile(main_dir, 'SOAS', 'P3', '1sec');
     dates = {'2013-05-31', '2013-07-10'};

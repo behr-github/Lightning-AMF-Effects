@@ -1,10 +1,26 @@
-%function [ data, utc, alt, lon, lat, fills ] = remove_merge_fills( Merge, field, varargin )
 function [ data, varargout ] = remove_merge_fills( Merge, field, varargin )
-%remove_merge_fills(Merge, field) Returns "field", utc, alt, lat, lon (properly
-%scaled) with fill values in "field" replaced with NaNs.  Also returns the
-%logical matrix of which entries were fills as the fifth output.  If you
-%need to specify UTC, altitude, latitude, or longitude field names, do so
-%as the parameters 'time', 'alt', 'lat', and 'lon'.
+% REMOVE_MERGE_FILLS - Return data from a Merge structure with fill value exchanged for NaNs
+%   DATA = REMOVE_MERGE_FILLS( MERGE, FIELD ) Returns the values of
+%   MERGE.Data.(FIELD) with fill values replaced with NaNs, where MERGE is
+%   a Merge structure created by reading an ICART file with
+%   read_icartt_file and FIELD is a string that gives a field of
+%   MERGE.Data.
+%
+%   [ DATA, UTC, ALT, LON, LAT ] = REMOVE_MERGE_FILLS( MERGE, FIELD ) Still
+%   returns DATA with fill values removed, but also does the same thing for
+%   the UTC, ALTP (pressure altitude), LONGITUDE, and LATITUDE fields. (The
+%   UTC field is assumed to have no fill values). This syntax was created
+%   because it assumes that you'd often like to know when and where a
+%   measurement occurred. If the MERGE structure uses different names for
+%   these fields, you can override the names with the 'time', 'alt', 'lon',
+%   and 'lat' parameters respectively.
+%
+%   [ ... ] = REMOVE_MERGE_FILLS( MERGE, FIELD, 'unit', UNIT ) Used with
+%   either prior syntax, this will try to convert the data field to the
+%   unit given by the string UNIT by using convert_units.m. This requires
+%   that the unit given in the merge structure for that field be understood
+%   by convert_units and of the same type as the unit you wish to convert
+%   to.
 
 p = inputParser;
 p.addRequired('Merge',@isstruct);
@@ -13,16 +29,18 @@ p.addParameter('time','UTC',@isstr);
 p.addParameter('alt','ALTP',@isstr);
 p.addParameter('lat','LATITUDE',@isstr);
 p.addParameter('lon','LONGITUDE',@isstr);
+p.addParameter('unit','');
 p.addParameter('DEBUG_LEVEL',1,@(x) (isscalar(x) && isnumeric(x)));
 
 p.parse(Merge,field,varargin{:});
 pout = p.Results;
 Merge = pout.Merge;
 field = pout.field;
-utcfield = pout.time;
-altfield = pout.alt;
-lonfield = pout.lon;
-latfield = pout.lat;
+utc_field = pout.time;
+alt_field = pout.alt;
+lon_field = pout.lon;
+lat_field = pout.lat;
+unit_out = pout.unit;
 
 E = JLLErrors;
 DEBUG_LEVEL = pout.DEBUG_LEVEL;
@@ -57,34 +75,42 @@ elseif strcmpi(fill_val,'n/a')
 else
     E.badvar('fill_val','Is not a numeric scalar value or "N/A"');
 end
+
+
 % Let the user specify longitude as the main input, in which case we need
 % to correct the sign
 if ~isempty(regexpi(field, 'longitude', 'ONCE'))
     data = lon_fix(data);
 end
+
+% If a unit conversion is requested, try to do so
+if ~isempty(unit_out)
+    data = convert_units(data, Merge.Data.(field).Unit, unit_out);
+end
+
 if nargout > 5; varargout{5} = fills; end
 
 if nargout > 1; 
-    utc = eval(sprintf('Merge.Data.%s.Values',utcfield)); 
+    utc = Merge.Data.(utc_field).Values; 
     %utcfills = eval(sprintf('Merge.Data.%s.Fill',utcfield));
     %utc(utc==utcfills) = NaN; % There shouldn't ever be fill values in the UTC field
     varargout{1} = utc;
 end
 if nargout > 2; 
-    alt = eval(sprintf('Merge.Data.%s.Values',altfield)); 
-    altfills = eval(sprintf('Merge.Data.%s.Fill',altfield));
+    alt = Merge.Data.(alt_field).Values; 
+    altfills = Merge.Data.(alt_field).Fill;
     alt(alt==altfills) = NaN;
     varargout{2} = alt;
 end
 if nargout > 4; 
-    lat = eval(sprintf('Merge.Data.%s.Values',latfield)); 
-    latfills = eval(sprintf('Merge.Data.%s.Fill',latfield));
+    lat = Merge.Data.(lat_field).Values;
+    latfills = Merge.Data.(lat_field).Fill;
     lat(lat==latfills) = NaN;
     varargout{4} = lat;
 end
 if nargout > 3; 
-    lon = eval(sprintf('Merge.Data.%s.Values',lonfield)); 
-    lonfills = eval(sprintf('Merge.Data.%s.Fill',lonfield));
+    lon = Merge.Data.(lon_field).Values;
+    lonfills = Merge.Data.(lon_field).Fill;
     lon(lon==lonfills) = NaN;
     lon = lon_fix(lon);
     varargout{3} = lon;
