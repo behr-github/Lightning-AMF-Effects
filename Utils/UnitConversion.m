@@ -1,6 +1,11 @@
 classdef UnitConversion < handle
-    %UNTITLED2 Summary of this class goes here
-    %   Detailed explanation goes here
+    %UnitConversion - Class for defining unit conversions
+    %   This class is used to define relationships between units of the
+    %   same physical quantity. The user adds individual units with the
+    %   ADD_UNIT() method, then retrieves a conversion factor between two
+    %   units with the GET_CONVERSION() method. Metric prefixes (from
+    %   "atto" to "exa") are defined internally, so one does not need to
+    %   define separate units for different prefixes.
     
     properties(SetAccess = protected)
         unit_names = {};
@@ -71,7 +76,12 @@ classdef UnitConversion < handle
             %   against the units defined internally, accounting for metric
             %   prefixes. To be specific, the number returned if
             %   F_old/F_new, the conversion factors for the old and new
-            %   unit (multiplied by metric prefixes) respectively.
+            %   unit (multiplied by metric prefixes) respectively. 
+            %
+            %   Note: this will expect long metric prefixes with long
+            %   names, or short metric prefixes with abbreviations. (So
+            %   "mm" or "millimeter" are fine, but "mmeter" or "millim" are
+            %   not.) Also, "u" is used as the short prefix for "micro".
             old_conv = obj.get_conv_factor(old_unit);
             new_conv = obj.get_conv_factor(new_unit);
             conv = old_conv/new_conv;
