@@ -1,6 +1,9 @@
 function [  ] = label_subfigs( fig, varargin )
-%UNTITLED Summary of this function goes here
-%   Detailed explanation goes here
+%LABEL_SUBFIGS Label subfigures (child axes) with letters
+%   LABEL_SUBFIGS( FIG, ... ) Labels the axes within figure FIG with
+%   letters as e.g. "(a)", "(b)", etc. going horizontally first then
+%   vertically. Additional arguments accepted by label_axis_with_letter can
+%   be passed.
 
 xx = find(strcmpi(varargin, 'ax'));
 if ~isempty(xx)

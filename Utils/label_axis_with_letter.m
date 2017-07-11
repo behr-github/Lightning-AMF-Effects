@@ -30,6 +30,7 @@ if isnumeric(label) && isscalar(label)
         warning('Numeric value of LABEL exceeds number of letters in alphabet');
     end
     label = sprintf('(%s)',char(label+96));
+end
 if ~ischar(label)
     E.badinput('LABEL must be a string or a scalar number')
 end
@@ -77,7 +78,7 @@ else
 end
 y_top = y_top + shift_percent_y * diff(yl);
 
-text(x_left, y_top, label, 'color', fontcolor, 'fontweight', fontweight, 'fontsize', fontsize, 'parent', ax);
+text(double(x_left), double(y_top), label, 'color', fontcolor, 'fontweight', fontweight, 'fontsize', fontsize, 'parent', ax);
 
 end
 
