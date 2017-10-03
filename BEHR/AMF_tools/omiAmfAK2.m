@@ -1,8 +1,8 @@
 %OMIAMFAK2 - Compute OMI AMFs and AKs given scattering weights and NO2 profiles
 %
-%   [ amf, amfVis, amfCld, amfClr, sc_weights, avgKernel, no2ProfileInterp,
-%     swPlev ] = omiAmfAK2( pTerr, pCld, cldFrac, cldRadFrac, pressure, 
-%     dAmfClr, dAmfCld, temperature, no2Profile ) 
+%   [ amf, amfVis, amfCldTotCol, amfCldVisOnly,  amfClr, sc_weights, avgKernel, no2ProfileInterp,
+%     swPlev ] = omiAmfAK2( pTerr, pCld, cldFrac, cldRadFrac, pressure, dAmfClr, dAmfCld, 
+%     temperature, no2Profile ) 
 %
 %   INPUTS:
 %       pTerr - the 2D array of pixel surface pressures
@@ -24,7 +24,8 @@
 %           ghost column below clouds).
 %       amfVis - the 2D array of AMFs for each pixel that will yield only visible columns (so EXCLUDING
 %           ghost column below clouds)
-%       amfCld - the 2D array of cloudy AMFs that are used for the total column AMF.
+%       amfCldTotCol - the 2D array of cloudy AMFs that are used for the total column AMF.
+%       amfCldVisOnly - the 2D array of cloudy AMFs that are used for the visible only AMFs.
 %       amfClr - the 2D array of clear sky AMFs, used for both AMFs.
 %       sc_weights - the 3D array of combined scattering weights for the total column AMFs. These include
 %           weights interpolated to the surface and cloud pressures.
@@ -58,7 +59,7 @@
 %
 % Outputs:
 %  amf    = air mass factor
-%  amfCld = component of amf over cloudy part of scene (if any)
+%  amfCldTotCol = component of amf over cloudy part of scene (if any)
 %  amfClr = component of amf over clear  part of scene (if any)
 %
 % Set keyword ak to compute these additional outputs:
@@ -70,7 +71,7 @@
 %
 %    omiAmfAK, pTerr, pCld,  cldFrac,  cldRadFrac,  noGhost=noGhost,  ak=ak,         $ ;;scalar inputs
 %              pressure,  dAMFclr,  dAMFcld,  temperature, no2Profile, no2Profile2, $ ;;vector inputs
-%              amf, amfCld, amfClr, avgKernel, vcd, vcdAvgKernel                       ;;outputs%
+%              amf, amfCldTotCol, amfClr, avgKernel, vcd, vcdAvgKernel                       ;;outputs%
 %
 %..........................................................................
 %
@@ -81,7 +82,8 @@
 %
 %   Josh Laughner <joshlaugh5@gmail.com> 
 
-function [amf, amfVis, amfCld, amfClr, sc_weights, avgKernel, no2ProfileInterp, swPlev ] = omiAmfAK2(pTerr, pCld, cldFrac, cldRadFrac, pressure, dAmfClr, dAmfCld, temperature, no2Profile)
+%function [amf, amfCldTotCol, amfClr, avgKernel, vcd, vcdAvgKernel] = omiAmfAK2(pTerr, pCld, cldFrac, cldRadFrac, pressure, dAmfClr, dAmfCld, temperature, no2Profile, no2Profile2, noGhost, ak)
+function [amf, amfVis, amfCldTotCol, amfCldVisOnly, amfClr, sc_weights, avgKernel, no2ProfileInterp, swPlev ] = omiAmfAK2(pTerr, pCld, cldFrac, cldRadFrac, pressure, dAmfClr, dAmfCld, temperature, no2Profile)
 
 
 % Each profile is expected to be a column in the no2Profile matrix.  Check
@@ -98,19 +100,25 @@ if size(temperature,1) ~= length(pressure)
     error(E.callError('temperature_input','temperature must be a column vector.  Ensure size(temperature,1) == length(pressure)'));
 end
 
+minPressure = 200;  % defined tropopause pressure (hPa)
+
 alpha = 1 - 0.003 * (temperature - 220);   % temperature correction factor vector
 alpha_i=max(alpha,0.1);
 alpha = min(alpha_i,10);
 
+%vcdCld = 0;     amfClr = 0;     amfCldTotCol = 0;
+dAmfClr0 = dAmfClr;     dAmfCld0 = dAmfCld;
 
-% Integrate to get clear and cloudy AMFs
+
+% Integrate to get clear and cloudy AMFs....................................
 vcdGnd=zeros(size(pTerr));
 vcdCld=zeros(size(pTerr));
 amfClr=zeros(size(pTerr));
-amfCld=zeros(size(pTerr));
+amfCldTotCol=zeros(size(pTerr));
+amfCldVisOnly=zeros(size(pTerr));
 
 
-% JLL 18 May 2015:
+% JLL 18 May 2015..........................................................
 % Added preinitialization of these matrices, also nP will be needed to pad
 % output vectors from integPr2 to allow concatenation of scattering weights
 % vectors into a matrix (integPr2 will return a shorter vector if one or
@@ -124,7 +132,7 @@ swClr=zeros(size(no2Profile)+padvec);
 swCld=zeros(size(no2Profile)+padvec);
 no2ProfileInterp=zeros(size(no2Profile)+padvec);
 nP = size(swPlev,1);
-
+%..........................................................................
 
 for i=1:numel(pTerr)
     vcdGnd(i) = integPr2(no2Profile(:,i), pressure, pTerr(i));  
@@ -140,13 +148,18 @@ for i=1:numel(pTerr)
     end
     if cldFrac(i) ~= 0 && cldRadFrac(i) ~= 0;
         cldSCD=integPr2((no2Profile(:,i).*dAmfCld(:,i).*alpha(:,i)), pressure, pCld(i));
-        amfCld(i) = cldSCD ./ vcdGnd(i);
+        amfCldTotCol(i) = cldSCD ./ vcdGnd(i);
+        if vcdCld(i) > 0
+            amfCldVisOnly(i) = cldSCD ./ vcdCld(i);
+        else
+            amfCldVisOnly(i) = 0;
+        end
     else
-        amfCld(i)=0;
+        amfCldTotCol(i)=0;
     end
 
     
-    % JLL 19 May 2015:
+    % JLL 19 May 2015......................................................
     % Added these lines to interpolate to the terrain & cloud pressures and
     % output a vector - this results in better agreement between our AMF and
     % the AMF calculated from "published" scattering weights.
@@ -177,76 +190,30 @@ for i=1:numel(pTerr)
     swClr(:,i) = this_swClr;
     swCld(:,i) = this_swCld;
     no2ProfileInterp(:,i) = this_no2ProfileInterp;
+    %......................................................................
 
 end
+% Combine clear and cloudy parts of AMFs
 
-% Combine clear and cloudy parts of AMFs to calculate an AMF that corrects
-% multiplicatively for the ghost column. It does so by including the ghost
-% column in the VCD in the denominator of the AMF, which makes the AMF the
-% ratio of the modeled (visible) SCD to the TOTAL VCD.
-%
-% We also calculate an AMF that will produce a visible-only VCD by
-% effectively replacing the denominator with the modeled visible only VCD.
-
-amf = cldRadFrac .* amfCld + (1-cldRadFrac).*amfClr;
+amf = cldRadFrac .* amfCldTotCol + (1-cldRadFrac).*amfClr;
 amf(~isnan(amf)) = max(amf(~isnan(amf)),1.e-6);   % clamp at min value (2008-06-20), but don't replace NaNs with the min value (2016-05-12)
-
-amfVis = amf .* vcdGnd ./ (vcdCld .* cldFrac + vcdGnd .* (1 - cldFrac));
+amfVis = cldRadFrac .* amfCldVisOnly + (1-cldRadFrac).*amfClr;
 amfVis(~isnan(amfVis)) = max(amfVis(~isnan(amfVis)),1.e-6);
 
-% There is an alternate way of calculating a visible-only AMF: calculate a
-% cloudy visible-only AMF by dividing the cloud modeled SCD by an
-% above-cloud only modeled VCD instead of the to-ground VCD. Then weight
-% these together by the cloud radiance fraction:
-%
-%   A_vis = (1-f) * A_clr + f * A_cld_vis
-%         = (1-f) * S_clr / V_clr + f * S_cld / V_cld_vis
-%
-% Talking with Jim Gleason, he saw no reason that either representation
-% would be invalid, and BEHR v2.1C used this alternate formulation.
-%
-% However, later I heard back from Eric Bucsela about this, and he pointed
-% out that the physical interpretation of this alternate method is less
-% clear. He generally thinks of AMFs as "what you should see divided by
-% what you should want", so that when you divide what you actually see by
-% the AMF, you get what you want. Since we see the SCD and want the VCD, we
-% really want our visible AMF to be:
-%
-%   A_vis = SCD / VCD_vis 
-%         = [(1-f) * S_clr + f * S_cld] / [(1-f) * V_clr + f * V_cld_vis]
-%
-% which is subtly different because now everything is one fraction.
-% Algebraically, this form is equivalent to multiplying the total-column
-% AMF by the ratio of the visible and total VCDs. This also seems to
-% produce better agreement if you try to reproduce the AMF with the
-% scattering weights.
-%
-% Eric also pointed out that the visible VCD should be a sum of clear and
-% cloudy VCDs weighted by the geometric cloud fraction, not the radiance
-% cloud fraction, b/c in that part we don't want to give more weight to the
-% brighter cloudy part of the pixel.
-%
-%   -- J. Laughner, 19 Jul 2017
-
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Now compute averaging kernel %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% This is only done for the total column, on the assumption that most
-% modelers would want to compare total column against their modeled column.
-
-% These 2 sets of lines are an approximation of what is done in the OMI NO2
-% algorithm
+% Preallocation added 13 May 2015 - JLL.............................
 avgKernel = nan(size(swPlev));
 sc_weights = nan(size(swPlev));
+% ..................................................................
+% Now compute averaging kernel.............................................
+% This is only done for the total column, on the assumption that most modelers would 
+% want to compare total column against their modeled column.
 
+% These 2 sets of lines are an approximation of what we do in the OMI NO2 algorithm
 for i=1:numel(pTerr)
+   %...............................................................
    % JLL 19 May 2015 - pull out the i'th vector, this will allow us
    % to remove nans for AMF calculations where needed, and also
    % check that all vectors have NaNs in the same place.
-   
    swPlev_i = swPlev(:,i);
    swClr_i = swClr(:,i);
    swCld_i = swCld(:,i);
@@ -258,15 +225,41 @@ for i=1:numel(pTerr)
        % okay because the AMF will just end up being a NaN anyway - 
        E.callError('nan_mismatch','NaNs are not the same in the swPlev, swClr, and swCld vectors');
    end
+   %...............................................................
    
-   ii = swPlev_i > pTerr(i) & ~isnan(swPlev_i);
-   swClr_i(ii)=1e-30;
-   
-   ii = swPlev_i > pCld(i) & ~isnan(swPlev_i);
-   swCld_i(ii)=1e-30;
+   ii = find(swPlev_i > pTerr(i));
+   if min(ii) >= 1;
+       swClr_i(ii)=1E-30;
+   end
+   ii = find(swPlev_i > pCld(i));
+   if min(ii) >= 1;
+       swCld_i(ii)=1E-30;
+   end
 
+   % more temporary testing code - JLL 19 May 2015.................
+   ii = find(pressure > pTerr(i));
+   if min(ii) >= 1;
+       dAmfClr0(ii,i) = 1E-30;
+   end
+   ii = find(pressure > pCld(i));
+   if min(ii) >= 1;
+       dAmfCld0(ii,i) = 1E-30;
+   end
+   %...............................................................
    % Added 14-15 May 2015 to handle outputting scattering weights
+   % 
    sc_weights(:,i) = (cldRadFrac(i).*swCld_i + (1-cldRadFrac(i)).*swClr_i);
-   
+   %...............................................................
    avgKernel(:,i) = sc_weights(:,i) ./ amf(i); % JLL 19 May 2015 - changed to use the scattering weights we're already calculating.
 end
+
+% Integrate NO2 profile with and without averaging kernel .................
+%            ii           = find(pressure >= minPressure);
+%            vcd(i)          = integPr2(max(no2Profile2(i,ii), 1E-30), pressure(ii), pTerr(i));
+%            vcdAvgKernel(i) = integPr2(max(no2Profile2(i,ii).*avgKernel(i,ii), 1E-30), pressure(ii), pTerr(i));
+%        end
+%   end
+%end
+
+
+

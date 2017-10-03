@@ -29,7 +29,7 @@ cmap = colormap(map);
 close(figtmp);
 
 ncolors = size(cmap,1);
-ind = round((val - minval)/maxval * (ncolors-1) + 1);
+ind = round((val - minval)/(maxval - minval) * (ncolors-1) + 1);
 ind = max(ind, 1);
 ind = min(ind, ncolors);
 

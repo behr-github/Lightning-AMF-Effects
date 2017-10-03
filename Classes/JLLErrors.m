@@ -147,9 +147,9 @@ classdef JLLErrors<handle
             error(errstruct);
         end
         
-        function errstruct = badgeo(obj, msg)
+        function errstruct = badgeo(obj, msg, varargin)
             if ~exist('msg','var')
-                msg = obj.badgeo_msg;
+                msg = sprintf(obj.badgeo_msg, varargin{:});
             end
             errstruct = obj.makeErrStruct(obj.badgeo_tag, msg);
             error(errstruct);
@@ -168,18 +168,29 @@ classdef JLLErrors<handle
             error(errstruct);
         end
         
-        function errstruct = dir_dne(obj, dirnames)
-            % Error for use when specified directories do not exist. Takes
-            % one or more directory names as a cell; if passing only one
-            % name, it can be a string.
-            narginchk(2,2)
-            if ischar(dirnames)
-                dirnames = {dirnames};
-            elseif ~iscellstr(dirnames)
-                error('JLLErrors:dir_dne:bad_input','dirnames should be a string or cell of strings')
+        function errstruct = dir_dne(obj, varargin)
+            % Error for use when specified directories do not exist. Can be
+            % used in two ways:
+            %   1) Given a directory name as a string or a list of them as
+            %   a cell array of strings, it will print a standard directory
+            %   not found message and list the directories given.
+            %   2) Given more than one argument, it will take the first one
+            %   as the error message and insert the remaining arguments in
+            %   fprintf like syntax.
+            narginchk(2,Inf)
+            if nargin == 2
+                dirnames = varargin{1};
+                if ischar(dirnames)
+                    dirnames = {dirnames};
+                elseif ~iscellstr(dirnames)
+                    error('JLLErrors:dir_dne:bad_input','dirnames should be a string or cell of strings')
+                end
+                vars = strjoin(dirnames, ', ');
+                errstruct = obj.makeErrStruct(obj.dir_dne_tag, sprintf(obj.dir_dne_msg, vars));
+            else
+                msg = sprintf(varargin{1}, varargin{2:end});
+                errstruct = obj.makeErrStruct(obj.dir_dne_tag, msg);
             end
-            vars = strjoin(dirnames, ', ');
-            errstruct = obj.makeErrStruct(obj.dir_dne_tag, sprintf(obj.dir_dne_msg, vars));
             error(errstruct);
         end
         
@@ -473,6 +484,8 @@ classdef JLLErrors<handle
     methods(Access=private, Hidden=true)
         function errstruct = makeErrStruct(obj, tag, msg)
             errid = sprintf('%s:%s',obj.callingfxn,tag);
+            errid = strrep(errid, '/', ':');
+            errid = strrep(errid, '.', ':');
             stack = dbstack(2,'-completenames');
             errstruct = struct('identifier',errid,'message',msg,'stack',stack);
         end
